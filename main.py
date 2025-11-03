@@ -5,9 +5,11 @@ from ProcesadorTexto import ProcesadorTexto
 from ModeloLDA_DesdeCero import ModeloLDA_DesdeCero
 
 # --- 1. Configuración ---
-NOMBRE_PDF = 'Harry_Potter_y_la_Piedra_filosofal.pdf'
+NOMBRE_PDF = 'Yo, robot - Isaac Asimov.pdf'
 PATRON = r'\s*(\d+)\s*\n\s*([^\n]+)\s*'  # Patrón de Harry Potter
-NUM_TOPICOS = 19
+PATRON = r'\s*(\d+)\.\s*([^\n]+)\s*' #Patron de Yo, robot
+NUM_TOPICOS = 10
+OUTPUT_HTML = f"visualizacion_lda_YoRobot.html"
 
 # --- 2. Ejecución del Pipeline ---
 if __name__ == "__main__":

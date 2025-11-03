@@ -47,6 +47,7 @@ Este repositorio contiene dos "motores" de LDA que se ejecutan sobre el mismo te
     ```bash
     conda install -c conda-forge nltk gensim pandas scikit-learn pyldavis numpy
     pip install pypdf
+    pip install flask gensim pyLDAvis pypdf nltk numpy
     ```
 4.  Descarga los recursos de NLTK (ejecuta en la terminal de PyCharm o en la consola de Python):
     ```python
@@ -58,5 +59,8 @@ Este repositorio contiene dos "motores" de LDA que se ejecutan sobre el mismo te
 5.  Coloca tu PDF (`Harry_Potter_y_la_Piedra_filosofal.pdf`) en la carpeta raíz.
 6.  ¡Ejecuta el comparador!
     ```bash
+    #Para el caso web
+    python app.py
+    #Para el caso manual-manual
     python main.py
     ```

@@ -17,6 +17,7 @@ class ProcesadorTexto:
 
     def limpiar_y_tokenizar(self, texto_crudo):
         """Toma un texto crudo y devuelve una lista de tokens limpios y stemizados."""
+        # Expresión regular mejorada para español: incluye ñ, vocales con tilde y ü
         texto = re.sub(r'[^a-záéíóúüñ]', ' ', texto_crudo.lower())
         tokens = nltk.word_tokenize(texto, language='spanish')
 

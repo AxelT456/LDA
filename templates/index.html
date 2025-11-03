@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurador LDA</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
+        .container { 
+            max-width: 700px; 
+            margin: 40px auto; 
+            background: #ffffff; 
+            padding: 25px 40px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
+        h1 { text-align: center; color: #1a1a1a; }
+        form div { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; }
+        input[type="text"], input[type="number"], select, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box; 
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="file"] { padding: 5px; }
+        input[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        input[type="submit"]:hover { background-color: #0056b3; }
+        input[type="submit"]:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+        
+        .info { font-size: 0.9em; color: #666; margin-top: 5px; }
+        
+        /* Estilo para el mensaje de error */
+        .error-box {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #c62828;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        /* --- Estilos para la sección de resultados --- */
+        .results-section {
+            max-width: 1200px; 
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: none; 
+            flex-direction: column;
+            overflow: hidden; 
+        }
+        .results-section.active { display: flex; }
+        .results-header { padding: 20px 40px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;}
+        .results-header h1 { margin: 0; text-align: left; font-size: 1.5em; }
+        .results-content { display: flex; flex-direction: row; height: 80vh; } 
+        
+        .console-output {
+            width: 40%;
+            height: 100%;
+            overflow-y: scroll;
+            background: #2b2b2b;
+            color: #f1f1f1;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+        }
+        
+        #manual-charts-container {
+            padding: 20px;
+            background-color: #3f3f3f; 
+            border-bottom: 2px solid #555;
+        }
+        #manual-charts-container h3 {
+            color: #fff;
+            margin-top: 0;
+            border-bottom: 1px solid #666;
+            padding-bottom: 5px;
+        }
+        
+        .console-output pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            padding: 0 20px 20px 20px;
+        }
+
+        .viz-container {
+            width: 60%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+            border-left: 1px solid #ddd;
+        }
+        .viz-container .placeholder { color: #555; font-size: 1.2em; text-align: center; padding: 40px; }
+        iframe { width: 100%; height: 100%; border: none; }
+        a.button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        a.button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Analizador de Tópicos LDA</h1>
+
+        {% if error %}
+            <div class="error-box">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+        
+        <form action="/run" method="post" enctype="multipart/form-data" id="lda-form" onsubmit="return disableFormOnSubmit()">
+            
+            <div>
+                <label for="pdf_file">1. Sube tu archivo PDF:</label>
+                <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+            </div>
+
+            <p class="info">La división de capítulos es automática. Si no, se dividirá por página.</p>
+
+            <div>
+                <label for="num_topicos">2. Número de Tópicos (K):</label>
+                <input type="number" id="num_topicos" name="num_topicos" value="{{ num_topicos }}" min="2" max="50" required>
+            </div>
+
+            <div>
+                <label for="num_pasadas">3. Pasadas (Gensim) / Iteraciones (Manual):</label>
+                <input type="number" id="num_pasadas" name="num_pasadas" value="{{ num_pasadas }}" min="10" max="2000" required>
+            </div>
+
+            <div>
+                <label for="model_choice">4. Modelo a Ejecutar:</label>
+                <select id="model_choice" name="model_choice">
+                    <option value="gensim" {% if model_choice == 'gensim' %}selected{% endif %}>Gensim (Automático - Genera HTML)</option>
+                    <option value="cero" {% if model_choice == 'cero' %}selected{% endif %}>Desde Cero (Manual - Gráficos + Consola)</option>
+                    <option value="ambos" {% if model_choice == 'ambos' %}selected{% endif %}>Ambos (Comparación)</option>
+                </select>
+            </div>
+
+            <input type="submit" id="submit-button" value="Iniciar Análisis">
+        </form>
+    </div>
+
+    <div class="results-section {% if console_output %}active{% endif %}">
+        
+        <div class="results-header">
+            <h1>Resultados del Análisis</h1>
+            <a href="/" class="button">Analizar Otro PDF</a>
+        </div>
+        
+        <div class="results-content">
+            <div class="console-output">
+                
+                <div id="manual-charts-container">
+                    <h3>Tópicos (Modelo Manual)</h3>
+                </div>
+                
+                <pre>{{ console_output }}</pre>
+            </div>
+
+            <div class="viz-container">
+                {% if viz_file_path %}
+                    <iframe src="{{ viz_file_path }}"></iframe>
+                {% else %}
+                    <div class="placeholder">
+                        <h2>Sin visualización</h2>
+                        <p>La visualización HTML no se generó.<br>(Selecciona "Gensim" o "Ambos" para verla).</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function disableFormOnSubmit() {
+            var button = document.getElementById('submit-button');
+            var fileInput = document.getElementById('pdf_file');
+
+            // 1. Verificamos si el usuario seleccionó un archivo
+            if (fileInput.files.length === 0) {
+                 // Si no hay archivo, detenemos el envío y dejamos que
+                 // el 'required' del HTML muestre el error.
+                return false; // ¡Importante! 'false' detiene el envío
+            }
+
+            // 2. Desactivar el botón y cambiar el texto
+            button.disabled = true;
+            button.value = 'Procesando... Esto puede tardar varios minutos...';
+
+            // 3. Desactivar SÓLO los campos de configuración
+            document.getElementById('num_topicos').disabled = true;
+            document.getElementById('num_pasadas').disabled = true;
+            document.getElementById('model_choice').disabled = true;
+            
+            // ¡NO DESACTIVAMOS el input del archivo ('pdf_file')!
+            
+            // 4. Permitir que el formulario se envíe
+            return true;
+        }
+
+        // --- CÓDIGO PARA DIBUJAR LOS GRÁFICOS ---
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // --- ¡CORRECCIÓN CLAVE! ---
+            // 'tojson | safe' maneja correctamente el valor 'None' (que se convierte en 'null')
+            var topicsData = {{ manual_topics | tojson | safe }};
+
+            if (topicsData) {
+                var container = document.getElementById('manual-charts-container');
+                container.innerHTML = '<h3>Tópicos (Modelo Manual)</h3>'; // Limpiamos
+
+                topicsData.forEach(function(topic) {
+                    
+                    var labels = topic.terms.map(function(term) { return term.palabra; }).reverse();
+                    var data = topic.terms.map(function(term) { return term.prob; }).reverse();
+
+                    var title = document.createElement('h4');
+                    title.innerText = 'Tópico ' + topic.topic_id;
+                    title.style.color = '#fff';
+                    title.style.marginTop = '20px';
+                    
+                    var canvas = document.createElement('canvas');
+                    canvas.id = 'chart_topic_' + topic.topic_id;
+                    
+                    container.appendChild(title);
+                    container.appendChild(canvas);
+
+                    var ctx = canvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels, 
+                            datasets: [{
+                                label: 'Probabilidad',
+                                data: data, 
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y', 
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: { color: '#f1f1f1' }
+                                },
+                                y: {
+                                    ticks: { color: '#f1f1f1' }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false 
+                                }
+                            },
+                            maintainAspectRatio: false
+                        }
+                    });
+                });
+            } else {
+                var container = document.getElementById('manual-charts-container');
+                container.innerHTML += "<p style='padding-left: 20px; color: #999; font-family: sans-serif;'>No se generaron gráficos manuales (selecciona 'Desde Cero' o 'Ambos').</p>";
+            }
+        });
+    </script>
+    
+</body>
+</html>
