@@ -1,0 +1,35 @@
+# IDE / Editor files
+# (Tus reglas originales)
+/shelf/
+/workspace.xml
+/httpRequests/
+/dataSources/
+/dataSources.local.xml
+/.idea/
+
+# --- ¡NUEVO! ---
+# Archivos del IDE que están en tu carpeta raíz (visto en tu captura)
+LDA.iml
+misc.xml
+modules.xml
+vcs.xml
+
+# Python
+/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- ¡NUEVO Y MUY IMPORTANTE! ---
+# Entorno Virtual (Añade el nombre de tu carpeta si es diferente)
+/venv/
+/.venv/
+/env/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Custom Rules
+# (Tu regla original)
+/uploads/*.pdf

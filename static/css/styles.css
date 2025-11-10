@@ -1,0 +1,296 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    padding: 2rem; /* Añadimos padding general */
+}
+
+/* Eliminamos el header y footer, así que ya no necesitamos sus estilos */
+
+main {
+    max-width: 760px; /* Hacemos el contenedor principal más angosto */
+    margin: 0 auto; /* Centramos el contenedor */
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+section {
+    margin-bottom: 2.5rem; /* Más separación */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 2rem;
+}
+
+section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+h3 {
+    color: #0056b3;
+    display: flex; /* Para alinear el ícono */
+    align-items: center;
+    gap: 0.5rem; /* Espacio entre ícono y texto */
+    font-size: 1.5rem;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.5rem;
+}
+
+/* --- Nuevos estilos para el Formulario --- */
+#form-lda {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Espacio entre grupos de formulario */
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas */
+    gap: 1rem;
+}
+
+/* Estilos para inputs de texto/número */
+input[type="number"] {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="number"]:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 0 3px rgba(0,86,179,0.1);
+    outline: none;
+}
+
+/* Estilos para el input de archivo */
+input[type="file"] {
+    font-size: 0.95rem;
+}
+/* Estilo moderno para el botón de subir archivo */
+input[type="file"]::file-selector-button {
+    font-weight: 600;
+    color: #0056b3;
+    padding: 0.5rem 1rem;
+    border: 1px solid #0056b3;
+    border-radius: 6px;
+    background-color: #f0f6ff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #e0ecff;
+}
+
+
+/* Estilo para el botón de ejecutar */
+#btn-ejecutar {
+    background-color: #0056b3;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+#btn-ejecutar:hover {
+    background-color: #004a99;
+}
+
+#btn-ejecutar:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+/* --- Estilos para Mensajes de Estado --- */
+#estado-proceso p {
+    padding: 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+.loading {
+    background-color: #fffbe6;
+    border: 1px solid #ffe58f;
+    color: #b38b00;
+}
+.success {
+    background-color: #f6ffed;
+    border: 1px solid #b7eb8f;
+    color: #389e0d;
+}
+.error {
+    background-color: #fff1f0;
+    border: 1px solid #ffa39e;
+    color: #cf1322;
+}
+
+
+/* --- Estilos para los Tópicos (Resultados) --- */
+#contenedor-topicos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.topico {
+    background-color: #fdfdfd;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.topico h4 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #0056b3;
+    padding-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.topico ul {
+    padding-left: 0;
+    list-style-type: none;
+    margin-bottom: 0;
+}
+
+.topico li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.palabra {
+    font-weight: 600;
+    color: #111;
+}
+
+.probabilidad {
+    font-size: 0.9rem;
+    color: #555;
+}
+/* --- Estilos para Controles de Resultados --- */
+#controles-resultados {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    max-width: 300px; /* Lo hacemos compacto */
+    border: 1px solid #e0e0e0;
+}
+
+/* Clase simple para ocultar/mostrar elementos */
+.hidden {
+    display: none;  
+}
+
+#controles-resultados .form-group {
+    margin-bottom: 0; /* Quitamos margen extra */
+}
+/* Botón de Guardar (junto a controles) */
+#btn-guardar {
+    padding: 0.75rem;
+    border: 1px solid #0056b3;
+    color: #0056b3;
+    background-color: #f0f6ff;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-left: 1rem; /* Espacio */
+    align-self: flex-end; /* Alinea con el input */
+}
+#btn-guardar:hover {
+    background-color: #e0ecff;
+}
+
+/* Contenedor de controles (para alinear los botones) */
+#controles-resultados {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+/* --- Estilos para la Card del Tópico --- */
+
+/* Cabecera de la card (para título y botón) */
+.topico-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0056b3;
+    padding-bottom: 5px;
+    margin-bottom: 1rem;
+}
+
+/* Título editable */
+.topico-titulo {
+    margin: 0;
+    color: #333;
+    font-size: 1.2rem;
+    outline: none; /* Quita el borde al hacer focus */
+    border-radius: 4px;
+    padding: 2px 5px;
+    transition: background-color 0.2s;
+}
+.topico-titulo[contenteditable="true"]:focus {
+    background-color: #f0f6ff; /* Resalta al editar */
+    box-shadow: 0 0 0 2px #0056b3;
+}
+
+/* Botón de cambiar vista (Graficar/Lista) */
+.btn-toggle-view {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #777;
+    color: #555;
+    background-color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+.btn-toggle-view:hover {
+    background-color: #f4f4f4;
+}
+
+/* Contenedor para el contenido (lista o gráfica) */
+.topico-contenido {
+    /* Damos una altura fija para que el cambio no haga "saltar" la página */
+    min-height: 350px; 
+}
+/* --- Estilo para el botón de Volver --- */
+.btn-back {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    text-decoration: none;
+    color: #0056b3;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: transform 0.2s;
+}
+.btn-back:hover {
+    transform: translateX(-3px); /* Pequeño efecto de movimiento */
+}

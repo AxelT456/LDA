@@ -73,11 +73,16 @@ class ModeloLDA_DesdeCero:
     # -----------------------------------------------------------------
     # MÉTODO 2: ENTRENAR (Reemplaza a LdaModel con Muestreo de Gibbs)
     # -----------------------------------------------------------------
-    def entrenar(self, num_topicos, iteraciones=1000, passes=1):
+    def entrenar(self, num_topicos, iteraciones=1000, passes=1, alpha=None, beta=None):
         """
         Entrena el modelo LDA usando Muestreo de Gibbs (MCMC / Cadenas de Markov).
         """
+        if alpha is not None:
+            self.alpha = alpha
+        if beta is not None:
+            self.beta = beta
         print(f"Entrenando modelo LDA desde cero con {num_topicos} tópicos...")
+        print(f"Hiperparámetros: Alpha={self.alpha}, Beta={self.beta}, Passes={passes}")
         self.K = num_topicos
 
         # --- Inicializar matrices de conteo con ceros usando NumPy ---
@@ -150,29 +155,46 @@ class ModeloLDA_DesdeCero:
     # -----------------------------------------------------------------
     def mostrar_topicos(self, num_palabras=10):
         """
-        Imprime los tópicos en la consola leyendo nuestras matrices de conteo.
+        Imprime los tópicos y DEVUELVE una estructura de datos con ellos.
         """
         print("\n--- Tópicos Descubiertos (desde cero) ---")
+        
+        # Lista para guardar los datos que irán al JSON
+        topicos_data = []
 
         # Calculamos la matriz de distribución de palabras por tópico (llamada Phi)
         matriz_phi = (self.n_wt + self.beta) / (self.n_t + self.V * self.beta)
 
         for k in range(self.K):
-            # Obtenemos las probabilidades para este tópico
             prob_palabras = matriz_phi[:, k]
 
-            # Obtenemos los IDs de las 'num_palabras' más probables
-            # argsort() nos da los índices de menor a mayor
-            top_indices = prob_palabras.argsort()[-num_palabras:][::-1]  # Truco para obtener los N más altos
+            # --- ¡CAMBIO AQUÍ! ---
+            # 1. Definimos cuántas palabras enviaremos al JSON (frontend)
+            num_palabras_para_json = 30
+            top_indices_json = prob_palabras.argsort()[-num_palabras_para_json:][::-1]
 
-            # Construimos el string del tópico
-            topic_str = f"Tópico {k}: "
-            for i in top_indices:
+            # 2. Creamos la lista de palabras para el JSON
+            palabras_del_topico = []
+            for i in top_indices_json:
                 palabra = self.id_a_palabra[i]
                 prob = prob_palabras[i]
-                topic_str += f'{prob:.4f}*"{palabra}" + '
+                palabras_del_topico.append({"palabra": palabra, "prob": float(prob)})
+            
+            topicos_data.append({
+                "topico_id": k,
+                "palabras": palabras_del_topico # Esta lista ahora tiene 30 palabras
+            })
+            # ----------------------------------------
+
+            # 3. El string para la consola sigue usando 'num_palabras' (ej. 10)
+            topic_str = f"Tópico {k}: "
+            # Usamos slicing en la lista que ya creamos
+            for item in palabras_del_topico[:num_palabras]: 
+                topic_str += f'{item["prob"]:.4f}*"{item["palabra"]}" + '
 
             print(topic_str.rstrip(" + "))
+        
+        return topicos_data
 
     # -----------------------------------------------------------------
     # MÉTODO 4: ELIMINADO

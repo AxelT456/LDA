@@ -1,34 +1,37 @@
-# 🔥 Topic Modeling: Harry Potter (Teoría vs. Práctica)
+# 🧰 Toolkit de NLP Interactivo (LDA y Cadenas de Markov)
 
-> Implementación de LDA desde cero (Muestreo de Gibbs) vs. `gensim` para Topic Modeling en *Harry Potter*. 🐍
+> Una aplicación web de Flask que implementa algoritmos de NLP desde cero, incluyendo Topic Modeling (LDA con Muestreo de Gibbs) y Generación de Texto (Cadenas de Markov).
 
-Este proyecto explora la extracción de tópicos analizando *"Harry Potter y la piedra filosofal"*. Su característica principal es la **comparación directa** entre un modelo de librería (`gensim`) y un modelo implementado manualmente desde cero (`numpy`).
+Este proyecto sirve como un laboratorio interactivo para algoritmos de Procesamiento de Lenguaje Natural (NLP). En lugar de ser un script estático, es una **suite de herramientas web** donde puedes subir tus propios datos y experimentar con los modelos en tiempo real.
 
+## 🚀 Herramientas Disponibles
 
+Este toolkit actualmente contiene dos herramientas principales:
 
-## 🔬 El Modelo: Teoría vs. Práctica
+1.  **🔬 Topic Modeling (LDA desde Cero)**
+    * Sube cualquier archivo `.pdf`.
+    * Define los hiperparámetros (Tópicos, Alpha, Beta, Iteraciones).
+    * Ejecuta un modelo LDA implementado manualmente con **Muestreo de Gibbs (MCMC)**.
+    * Visualiza los resultados en **gráficas de barras interactivas** (`Chart.js`).
+    * Edita los nombres de los tópicos y guarda los resultados en `JSON`.
 
-Este repositorio contiene dos "motores" de LDA que se ejecutan sobre el mismo texto procesado:
-
-* **`ModeloLDA` (La Librería):** Utiliza `gensim.LdaModel`, que está altamente optimizado y usa **Inferencia Variacional** para converger rápidamente.
-* **`ModeloLDA_DesdeCero` (La Teoría):** Es una implementación manual que utiliza **Muestreo de Gibbs (MCMC)**. Demuestra la teoría bayesiana subyacente y el funcionamiento de las Cadenas de Markov para asignar palabras a tópicos iterativamente.
-
-## 🚀 Características
-
-* **Parseo de PDF:** Lee `.pdf` y extrae el texto (`pypdf`).
-* **División Semántica:** Divide el libro en capítulos usando Expresiones Regulares (`re`).
-* **Pipeline de NLP:** Limpieza de texto, tokenización y *stemming* (`nltk`, `Snowball`).
-* **BoW:** Creación de Bolsa de Palabras (manual y con `gensim`).
-* **Comparación de Modelos:** Ejecuta `gensim` y el Muestreo de Gibbs uno tras otro.
+2.  **🔗 Generador de Texto (Cadenas de Markov)**
+    * Pega un bloque de texto de muestra.
+    * El modelo aprende las probabilidades de la siguiente palabra.
+    * Genera nuevo texto "al estilo de" la muestra original.
 
 ## 🛠️ Tecnologías Utilizadas
 
-* Python
-* `numpy` (para el modelo MCMC)
-* `gensim` (para el modelo de librería)
-* `nltk` & `SnowballStemmer` (para limpieza y stemming)
-* `pypdf` (para leer el PDF)
-* `pyLDAvis` (para visualizar los resultados de `gensim`)
+### Backend (Python)
+* **Flask:** Para el servidor web y la API REST.
+* **spaCy:** Para el pipeline de NLP (tokenización y **lematización**).
+* **NumPy:** Para los cálculos matriciales del Muestreo de Gibbs en LDA.
+* **pypdf:** Para leer el texto de los archivos PDF subidos.
+
+### Frontend
+* HTML5 / CSS3
+* **JavaScript (ES6+):** Para manejar la lógica de la API (`fetch`), la interactividad y la manipulación del DOM.
+* **Chart.js:** Para crear las visualizaciones de tópicos como gráficas de barras.
 
 ## ⚙️ Cómo Empezar
 
@@ -37,26 +40,27 @@ Este repositorio contiene dos "motores" de LDA que se ejecutan sobre el mismo te
     git clone [TU_URL_DE_GITHUB]
     cd [TU_REPOSITORIO]
     ```
-2.  Crea y activa el entorno de Conda:
+
+2.  (Recomendado) Crea y activa un entorno virtual:
     ```bash
-    # (Asegúrate de tener Miniconda instalado)
-    conda create -n lda-env python=3.11
-    conda activate lda-env
+    python -m venv venv
+    source venv/bin/activate  # En Windows: venv\Scripts\activate
     ```
-3.  Instala las dependencias:
+
+3.  Instala las dependencias de Python:
     ```bash
-    conda install -c conda-forge nltk gensim pandas scikit-learn pyldavis numpy
-    pip install pypdf
+    pip install Flask numpy spacy pypdf
     ```
-4.  Descarga los recursos de NLTK (ejecuta en la terminal de PyCharm o en la consola de Python):
-    ```python
-    import nltk
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('punkt_tab')
+
+4.  **¡IMPORTANTE!** Descarga el modelo de español para `spaCy`:
+    ```bash
+    python -m spacy download es_core_news_sm
     ```
-5.  Coloca tu PDF (`Harry_Potter_y_la_Piedra_filosofal.pdf`) en la carpeta raíz.
-6.  ¡Ejecuta el comparador!
+
+5.  Ejecuta el servidor de Flask:
     ```bash
     python main.py
     ```
+
+6.  ¡Abre la aplicación en tu navegador!
+    * Ve a `http://127.0.0.1:5000`
