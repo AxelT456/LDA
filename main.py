@@ -1,135 +1,134 @@
 import json
 from flask import Flask, render_template, request, jsonify
-
-# --- 1. Importaciones de Lógica ---
 from app.LectorDocumentos import LectorDocumentos
 from app.ProcesadorTexto import ProcesadorTexto
 from app.ModeloLDA_DesdeCero import ModeloLDA_DesdeCero
-from app.GeneradorMarkov import GeneradorMarkov # ¡NUEVA IMPORTACIÓN!
+from app.GeneradorMarkov import GeneradorMarkov
 
-# --- 2. Configuración Inicial ---
-app = Flask(__name__) # (Asumiendo que tu 'static' ya está bien)
+app = Flask(__name__)
 
-# --- 3. Objetos Reutilizables ---
-# (Estos son para la herramienta LDA)
+# Objetos reutilizables
 procesador_lda = ProcesadorTexto(idioma='spanish')
 lector_paginas = LectorDocumentos(patron_division=None)
-# (El generador de Markov se instancia por petición)
 
-
-# -----------------------------------------------------------------
-# --- RUTAS DE PÁGINAS (Frontend) ---
-# -----------------------------------------------------------------
-
+# --- RUTAS DE PÁGINAS ---
 @app.route('/')
 def index_general():
-    """ 
-    Sirve el NUEVO ÍNDICE GENERAL.
-    Busca 'templates/index.html'
-    """
     return render_template('index.html')
 
 @app.route('/lda')
 def herramienta_lda():
-    """
-    Sirve la HERRAMIENTA LDA (tu página antigua).
-    Busca 'templates/lda.html'
-    """
     return render_template('lda.html')
 
 @app.route('/markov')
 def herramienta_markov():
-    """
-    Sirve la NUEVA HERRAMIENTA DE MARKOV.
-    Busca 'templates/markov.html'
-    """
     return render_template('markov.html')
 
-
-# -----------------------------------------------------------------
-# --- RUTAS DE API (Backend) ---
-# -----------------------------------------------------------------
-
+# --- RUTAS DE API ---
 @app.route('/api/procesar', methods=['POST'])
 def procesar_lda_api():
-    """
-    Este es el API Endpoint para la herramienta LDA.
-    (Este código es el que ya tenías, no ha cambiado)
-    """
-    print("\n¡Petición recibida en /api/procesar (LDA)!")
-    
+    print("\n📩 Petición recibida en /api/procesar (LDA)")
+
     try:
-        # ... (Todo tu código de procesamiento de LDA va aquí) ...
-        # 1. Recibir el archivo y los datos del formulario
+        # 1. Validaciones de archivo
         if 'pdf_file' not in request.files:
-            return jsonify({"error": "No se encontró ningún archivo PDF en la solicitud."}), 400
+            return jsonify({"error": "No se encontró archivo PDF."}), 400
         file = request.files['pdf_file']
         if file.filename == '':
-            return jsonify({"error": "No se seleccionó ningún archivo."}), 400
-        
+            return jsonify({"error": "Archivo vacío o no seleccionado."}), 400
+
+        # 2. Obtener parámetros básicos
         num_topicos = int(request.form.get('k', 10))
-        alpha = float(request.form.get('alpha', 0.1))
-        beta = float(request.form.get('beta', 0.01))
-        iteraciones = int(request.form.get('iteraciones', 50))
+        
+        # Iteraciones (Default alto para permitir auto-stop si no se especifica)
+        iteraciones_input = request.form.get('iteraciones')
+        iteraciones = int(iteraciones_input) if iteraciones_input else 1000
 
-        # 2. Leer y procesar el PDF
-        documentos_por_pagina = lector_paginas.extraer_texto_por_paginas(file, min_longitud=150)
-        if not documentos_por_pagina:
-             return jsonify({"error": "El PDF está vacío o no se pudo leer."}), 400
+        # Estrategia de división (Capítulos vs Páginas)
+        estrategia = request.form.get('estrategia', 'paginas')
+        print(f"🔎 Estrategia seleccionada: {estrategia}")
 
-        # 3. Procesar el texto
-        textos_procesados = [procesador_lda.limpiar_y_tokenizar(doc) for doc in documentos_por_pagina]
+        # 3. Obtener Parámetros Avanzados (Opcionales)
+        # Convergencia (Umbral y Paciencia)
+        umbral_input = request.form.get('umbral')
+        paciencia_input = request.form.get('paciencia')
+        umbral = float(umbral_input) if umbral_input else None
+        paciencia = int(paciencia_input) if paciencia_input else None
 
-        # 4. Ejecutar el Modelo LDA
+        # Hiperparámetros (Alpha y Beta)
+        alpha_input = request.form.get('alpha')
+        beta_input = request.form.get('beta')
+        alpha = float(alpha_input) if alpha_input else None
+        beta = float(beta_input) if beta_input else None
+
+        # 4. Procesar PDF según estrategia
+        if estrategia == 'capitulos':
+            # Intenta dividir por capítulos
+            documentos = lector_paginas.extraer_texto_por_capitulos(file, min_longitud=500)
+            # Fallback si falla la detección
+            if len(documentos) < 2:
+                print("⚠️ Pocos capítulos detectados. Usando división por páginas como respaldo.")
+                file.seek(0)
+                documentos = lector_paginas.extraer_texto_por_paginas(file, min_longitud=150)
+        elif estrategia == 'completo':
+            # Estrategia Completa (¡NUEVO!)
+            documentos = lector_paginas.extraer_texto_completo(file, min_longitud=500)
+        else:
+            # Estrategia Páginas (Default)
+            documentos = lector_paginas.extraer_texto_por_paginas(file, min_longitud=150)
+
+        if not documentos:
+            return jsonify({"error": "El PDF está vacío o ilegible."}), 400
+
+        # 5. NLP y Modelo
+        textos_procesados = [procesador_lda.limpiar_y_tokenizar(doc) for doc in documentos]
+
         lda = ModeloLDA_DesdeCero(textos_procesados)
         lda.preparar_corpus(no_below=2, no_above=0.9)
-        lda.entrenar(
-            num_topicos=num_topicos, 
-            passes=iteraciones, 
-            alpha=alpha, 
-            beta=beta
+
+        # Entrenar (pasando todos los parámetros de control)
+        historial_entropia = lda.entrenar(
+            num_topicos=num_topicos,
+            iteraciones=iteraciones,
+            alpha=alpha,
+            beta=beta,
+            umbral=umbral,       
+            paciencia=paciencia  
         )
 
-        # 5. Obtener resultados
         datos_topicos = lda.mostrar_topicos()
-        return jsonify(datos_topicos)
+
+        # 6. Respuesta
+        return app.response_class(
+            response=json.dumps({
+                "topicos": datos_topicos,
+                "entropia_data": historial_entropia
+            }, ensure_ascii=False),
+            mimetype='application/json'
+        )
 
     except Exception as e:
-        print(f"Error durante el procesamiento de LDA: {e}")
+        print(f"❌ Error en LDA: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/markov/generar', methods=['POST'])
 def generar_markov_api():
-    """
-    ¡NUEVO API ENDPOINT!
-    Este es para la herramienta de Cadenas de Markov.
-    """
-    print("\n¡Petición recibida en /api/markov/generar!")
-    
     try:
         data = request.get_json()
         texto_fuente = data.get('texto')
         num_palabras = int(data.get('palabras', 100))
-        
+
         if not texto_fuente or len(texto_fuente) < 20:
             return jsonify({"error": "El texto fuente es muy corto."}), 400
-            
-        # 1. Crear el modelo
+
         generador = GeneradorMarkov(texto_fuente)
-        
-        # 2. Generar el texto
         texto_nuevo = generador.generar_texto(num_palabras)
-        
-        # 3. Devolver el resultado
         return jsonify({"texto_generado": texto_nuevo})
 
     except Exception as e:
-        print(f"Error durante la generación de Markov: {e}")
+        print(f"❌ Error Markov: {e}")
         return jsonify({"error": str(e)}), 500
 
-
-# --- 5. Ejecutar el Servidor ---
 if __name__ == "__main__":
-    print("Iniciando servidor Flask en http://127.0.0.1:5000")
+    print("🚀 Servidor corriendo en http://127.0.0.1:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)

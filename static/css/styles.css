@@ -4,14 +4,12 @@ body {
     background-color: #f8f9fa;
     color: #333;
     margin: 0;
-    padding: 2rem; /* Añadimos padding general */
+    padding: 2rem; 
 }
 
-/* Eliminamos el header y footer, así que ya no necesitamos sus estilos */
-
 main {
-    max-width: 760px; /* Hacemos el contenedor principal más angosto */
-    margin: 0 auto; /* Centramos el contenedor */
+    max-width: 900px; /* Ajustado para el layout de 2 columnas */
+    margin: 0 auto; 
     padding: 2rem;
     background-color: #ffffff;
     border-radius: 12px;
@@ -19,7 +17,7 @@ main {
 }
 
 section {
-    margin-bottom: 2.5rem; /* Más separación */
+    margin-bottom: 2.5rem; 
     border-bottom: 1px solid #eee;
     padding-bottom: 2rem;
 }
@@ -32,19 +30,19 @@ section:last-child {
 
 h3 {
     color: #0056b3;
-    display: flex; /* Para alinear el ícono */
+    display: flex; 
     align-items: center;
-    gap: 0.5rem; /* Espacio entre ícono y texto */
+    gap: 0.5rem; 
     font-size: 1.5rem;
     border-bottom: 2px solid #f0f0f0;
     padding-bottom: 0.5rem;
 }
 
-/* --- Nuevos estilos para el Formulario --- */
+/* --- Formulario --- */
 #form-lda {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem; /* Espacio entre grupos de formulario */
+    gap: 1.5rem; 
 }
 
 .form-group {
@@ -60,11 +58,10 @@ h3 {
 
 .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas */
+    grid-template-columns: 1fr 1fr; 
     gap: 1rem;
 }
 
-/* Estilos para inputs de texto/número */
 input[type="number"] {
     padding: 0.75rem;
     border: 1px solid #ccc;
@@ -79,11 +76,10 @@ input[type="number"]:focus {
     outline: none;
 }
 
-/* Estilos para el input de archivo */
 input[type="file"] {
     font-size: 0.95rem;
 }
-/* Estilo moderno para el botón de subir archivo */
+
 input[type="file"]::file-selector-button {
     font-weight: 600;
     color: #0056b3;
@@ -99,8 +95,6 @@ input[type="file"]::file-selector-button:hover {
     background-color: #e0ecff;
 }
 
-
-/* Estilo para el botón de ejecutar */
 #btn-ejecutar {
     background-color: #0056b3;
     color: white;
@@ -122,7 +116,7 @@ input[type="file"]::file-selector-button:hover {
     cursor: not-allowed;
 }
 
-/* --- Estilos para Mensajes de Estado --- */
+/* --- Mensajes de Estado --- */
 #estado-proceso p {
     padding: 1rem;
     border-radius: 6px;
@@ -144,15 +138,62 @@ input[type="file"]::file-selector-button:hover {
     color: #cf1322;
 }
 
+/* --- Layout de Resultados (2 Columnas) --- */
+.resultados-wrapper {
+    display: flex;
+    flex-wrap: wrap; 
+    align-items: flex-start; 
+    gap: 2rem; 
+}
 
-/* --- Estilos para los Tópicos (Resultados) --- */
 #contenedor-topicos {
+    flex: 1; 
+    min-width: 300px; 
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin-top: 1rem;
 }
 
+/* --- Controles de Resultados --- */
+#controles-resultados {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    flex: 0 0 300px; /* Ancho fijo */
+    border: 1px solid #e0e0e0;
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+#controles-resultados .form-group {
+    margin-bottom: 0; 
+    width: 100%; /* Para que ocupe el ancho del panel */
+}
+
+/* --- CLASE HIDDEN CORREGIDA --- */
+.hidden {
+    display: none !important; /* El !important arregla el bug */
+}
+
+#btn-guardar {
+    padding: 0.75rem;
+    border: 1px solid #0056b3;
+    color: #0056b3;
+    background-color: #f0f6ff;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 1rem; 
+    width: 100%; /* Botón ancho completo en el panel lateral */
+}
+#btn-guardar:hover {
+    background-color: #e0ecff;
+}
+
+/* --- Cards de Tópicos --- */
 .topico {
     background-color: #fdfdfd;
     border: 1px solid #e0e0e0;
@@ -182,60 +223,7 @@ input[type="file"]::file-selector-button:hover {
     font-size: 0.95rem;
 }
 
-.palabra {
-    font-weight: 600;
-    color: #111;
-}
-
-.probabilidad {
-    font-size: 0.9rem;
-    color: #555;
-}
-/* --- Estilos para Controles de Resultados --- */
-#controles-resultados {
-    background-color: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    max-width: 300px; /* Lo hacemos compacto */
-    border: 1px solid #e0e0e0;
-}
-
-/* Clase simple para ocultar/mostrar elementos */
-.hidden {
-    display: none;  
-}
-
-#controles-resultados .form-group {
-    margin-bottom: 0; /* Quitamos margen extra */
-}
-/* Botón de Guardar (junto a controles) */
-#btn-guardar {
-    padding: 0.75rem;
-    border: 1px solid #0056b3;
-    color: #0056b3;
-    background-color: #f0f6ff;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-left: 1rem; /* Espacio */
-    align-self: flex-end; /* Alinea con el input */
-}
-#btn-guardar:hover {
-    background-color: #e0ecff;
-}
-
-/* Contenedor de controles (para alinear los botones) */
-#controles-resultados {
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-}
-
-/* --- Estilos para la Card del Tópico --- */
-
-/* Cabecera de la card (para título y botón) */
+/* --- Títulos y Botones en Cards --- */
 .topico-header {
     display: flex;
     justify-content: space-between;
@@ -245,22 +233,21 @@ input[type="file"]::file-selector-button:hover {
     margin-bottom: 1rem;
 }
 
-/* Título editable */
 .topico-titulo {
     margin: 0;
     color: #333;
     font-size: 1.2rem;
-    outline: none; /* Quita el borde al hacer focus */
+    outline: none; 
     border-radius: 4px;
     padding: 2px 5px;
     transition: background-color 0.2s;
+    max-width: 70%; /* Evita que empuje el botón */
 }
 .topico-titulo[contenteditable="true"]:focus {
-    background-color: #f0f6ff; /* Resalta al editar */
+    background-color: #f0f6ff;
     box-shadow: 0 0 0 2px #0056b3;
 }
 
-/* Botón de cambiar vista (Graficar/Lista) */
 .btn-toggle-view {
     font-size: 0.8rem;
     font-weight: 600;
@@ -276,12 +263,11 @@ input[type="file"]::file-selector-button:hover {
     background-color: #f4f4f4;
 }
 
-/* Contenedor para el contenido (lista o gráfica) */
 .topico-contenido {
-    /* Damos una altura fija para que el cambio no haga "saltar" la página */
-    min-height: 350px; 
+    min-height: 300px; 
 }
-/* --- Estilo para el botón de Volver --- */
+
+/* --- Botón Volver --- */
 .btn-back {
     display: inline-block;
     margin-bottom: 1.5rem;
@@ -292,5 +278,64 @@ input[type="file"]::file-selector-button:hover {
     transition: transform 0.2s;
 }
 .btn-back:hover {
-    transform: translateX(-3px); /* Pequeño efecto de movimiento */
+    transform: translateX(-3px);
+}
+
+/* --- Gráfica de Entropía --- */
+#details-entropia {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    width: 100%;
+}
+#details-entropia summary {
+    font-weight: 600;
+    color: #0056b3;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+}
+#details-entropia summary::marker {
+    content: '📈 ';
+    font-size: 1em;
+}
+#contenedor-entropia-interior p {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 0;
+}
+
+/* Arreglo para la expansión infinita de la gráfica */
+.chart-container {
+    position: relative;
+    margin: 0 auto;
+    height: 250px; /* Altura fija para el contenedor */
+    width: 100%;
+}
+
+#grafica-entropia {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.lista-palabras-topico li {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+    font-family: monospace;
+}
+/* Botón estilo enlace para configuración avanzada */
+.btn-text-link {
+    background: none;
+    border: none;
+    color: #0056b3;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    text-align: left;
+    width: fit-content;
+}
+.btn-text-link:hover {
+    color: #003d82;
 }

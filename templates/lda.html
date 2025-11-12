@@ -21,26 +21,61 @@
                     <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
                 </div>
 
-                <p>2. Define los hiperparámetros del modelo:</p>
+                <div class="form-group">
+                    <label for="estrategia_division">Estrategia de División:</label>
+                    <select id="estrategia_division" style="padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; width: 100%;">
+                        <option value="paginas">Por Páginas (Rápido, menos preciso)</option>
+                        <option value="capitulos" selected>Por Capítulos (Mejor calidad semántica)</option>
+                        <option value="completo">Todo el PDF (Un solo documento)</option>
+                    </select>
+                    <small style="color: #666;">Define qué cuenta como un "documento" individual para el LDA.</small>
+                </div>
+
+                <p>2. Configuración del modelo:</p>
+                
                 <div class="form-grid">
-                    <div class="form-group">
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="num_topicos">Tópicos (K):</label>
                         <input type="number" id="num_topicos" value="10" min="2" max="50">
                     </div>
+                </div>
+
+                <button type="button" id="btn-avanzada" class="btn-text-link">
+                    ⚙️ Mostrar Configuración Avanzada (Iteraciones, Alpha, Beta)
+                </button>
+
+                <div id="config-avanzada" class="form-grid hidden" style="margin-top: 1rem;">
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="iteraciones">Iteraciones Máximas (Límite):</label>
+                        <input type="number" id="iteraciones" placeholder="Auto (Max 1000)">
+                        <small style="color: #0056b3; font-weight: 500;">
+                            ℹ️ Límite de seguridad. El modelo parará antes si converge.
+                        </small>
+                    </div>
+
                     <div class="form-group">
-                        <label for="iteraciones">Iteraciones:</label>
-                        <input type="number" id="iteraciones" value="50" min="10" max="1000">
+                        <label for="umbral">Umbral de Mejora (%):</label>
+                        <input type="number" id="umbral" step="0.001" placeholder="0.01">
+                        <small style="color: #666; font-size: 0.8rem;">Mínimo % de mejora para seguir.</small>
                     </div>
                     <div class="form-group">
-                        <label for="alpha">Alpha:</label>
-                        <input type="number" id="alpha" value="0.1" min="0.01" step="0.01">
+                        <label for="paciencia">Paciencia (Iteraciones):</label>
+                        <input type="number" id="paciencia" placeholder="10">
+                        <small style="color: #666; font-size: 0.8rem;">Intentos permitidos sin mejorar.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alpha">Alpha (Doc-Tópico):</label>
+                        <input type="number" id="alpha" step="0.0001" placeholder="Auto (50/K)">
                     </div>
                     <div class="form-group">
-                        <label for="beta">Beta:</label>
-                        <input type="number" id="beta" value="0.01" min="0.001" step="0.001">
+                        <label for="beta">Beta (Tópico-Palabra):</label>
+                        <input type="number" id="beta" step="0.0001" placeholder="Auto (1/V)">
                     </div>
                 </div>
-                <button type="submit" id="btn-ejecutar">Ejecutar Análisis</button>
+
+                <button type="submit" id="btn-ejecutar" style="margin-top: 1.5rem;">Ejecutar Análisis</button>
             </form>
         </section>
 
@@ -49,20 +84,36 @@
             
             <div id="estado-proceso"></div>
 
-            <div id="controles-resultados" >
-                <div class="form-group">
-                    <label for="num_palabras_visibles">Palabras visibles por tópico:</label>
-                    <input type="number" id="num_palabras_visibles" value="10" min="1" max="30">
+            <div class="resultados-wrapper">
+                
+                <div id="controles-resultados" class="hidden"> <div class="form-group">
+                        <label for="num_palabras_visibles">Palabras visibles por tópico:</label>
+                        <input type="number" id="num_palabras_visibles" value="10" min="1" max="30">
+                    </div>
+                    
+                    <button id="btn-guardar" class="btn-secundario">
+                        Guardar Resultados (JSON)
+                    </button>
+                    
+                    <details id="details-entropia" class="hidden">
+                        <summary>Ver Convergencia del Modelo (Entropía)</summary>
+                        <div id="contenedor-entropia-interior">
+                            <p>
+                                Esta gráfica muestra el historial de cómo la "Log-Entropía" 
+                                disminuye con cada pasada. Cuando la línea se aplana, el modelo ha convergido.
+                            </p>
+                            <div class="chart-container">
+                                <canvas id="grafica-entropia"></canvas>
+                            </div>
+                        </div>
+                    </details>
                 </div>
                 
-                <button id="btn-guardar" class="btn-secundario">
-                    Guardar Resultados (JSON)
-                </button>
-            </div>
-        </section>
-        <div id="contenedor-topicos">
-            <p>Sube un PDF y configura los parámetros para ver los resultados.</p>
-        </div> 
+                <div id="contenedor-topicos">
+                    <p>Sube un PDF y configura los parámetros para ver los resultados.</p>
+                </div>
+
+            </div> </section>
     </main>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
