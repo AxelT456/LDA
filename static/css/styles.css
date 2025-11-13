@@ -8,7 +8,7 @@ body {
 }
 
 main {
-    max-width: 900px; /* Ajustado para el layout de 2 columnas */
+    max-width: 900px; 
     margin: 0 auto; 
     padding: 2rem;
     background-color: #ffffff;
@@ -38,7 +38,20 @@ h3 {
     padding-bottom: 0.5rem;
 }
 
+/* --- Utilitarios de Margen --- */
+.mb-large { margin-bottom: 1.5rem; }
+.mt-medium { margin-top: 1rem; }
+.full-width { width: 100%; }
+.column-layout { flex-direction: column; }
+
 /* --- Formulario --- */
+.input-full {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
 #form-lda {
     display: flex;
     flex-direction: column;
@@ -54,6 +67,10 @@ h3 {
     font-weight: 600;
     margin-bottom: 0.5rem;
     color: #333;
+}
+
+.help-text {
+    color: #666;
 }
 
 .form-grid {
@@ -138,7 +155,7 @@ input[type="file"]::file-selector-button:hover {
     color: #cf1322;
 }
 
-/* --- Layout de Resultados (2 Columnas) --- */
+/* --- Layout de Resultados --- */
 .resultados-wrapper {
     display: flex;
     flex-wrap: wrap; 
@@ -146,21 +163,21 @@ input[type="file"]::file-selector-button:hover {
     gap: 2rem; 
 }
 
-#contenedor-topicos {
-    flex: 1; 
-    min-width: 300px; 
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
+/* --- Stats Box (M-H) --- */
+.stats-box {
+    margin-bottom: 1rem;
+    padding: 10px;
+    background: #eef;
+    border-radius: 6px;
 }
 
-/* --- Controles de Resultados --- */
+/* --- Controles de Resultados (LDA) --- */
 #controles-resultados {
     background-color: #f8f9fa;
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1.5rem;
-    flex: 0 0 300px; /* Ancho fijo */
+    flex: 0 0 300px; 
     border: 1px solid #e0e0e0;
     display: flex;
     align-items: flex-start;
@@ -169,12 +186,12 @@ input[type="file"]::file-selector-button:hover {
 
 #controles-resultados .form-group {
     margin-bottom: 0; 
-    width: 100%; /* Para que ocupe el ancho del panel */
+    width: 100%; 
 }
 
 /* --- CLASE HIDDEN CORREGIDA --- */
 .hidden {
-    display: none !important; /* El !important arregla el bug */
+    display: none !important; 
 }
 
 #btn-guardar {
@@ -187,13 +204,21 @@ input[type="file"]::file-selector-button:hover {
     cursor: pointer;
     transition: background-color 0.2s;
     margin-top: 1rem; 
-    width: 100%; /* Botón ancho completo en el panel lateral */
+    width: 100%; 
 }
 #btn-guardar:hover {
     background-color: #e0ecff;
 }
 
 /* --- Cards de Tópicos --- */
+#contenedor-topicos {
+    flex: 1; 
+    min-width: 300px; 
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
 .topico {
     background-color: #fdfdfd;
     border: 1px solid #e0e0e0;
@@ -216,11 +241,12 @@ input[type="file"]::file-selector-button:hover {
     margin-bottom: 0;
 }
 
-.topico li {
+.lista-palabras-topico li {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
-    font-size: 0.95rem;
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+    font-family: monospace;
 }
 
 /* --- Títulos y Botones en Cards --- */
@@ -241,7 +267,7 @@ input[type="file"]::file-selector-button:hover {
     border-radius: 4px;
     padding: 2px 5px;
     transition: background-color 0.2s;
-    max-width: 70%; /* Evita que empuje el botón */
+    max-width: 70%; 
 }
 .topico-titulo[contenteditable="true"]:focus {
     background-color: #f0f6ff;
@@ -267,7 +293,7 @@ input[type="file"]::file-selector-button:hover {
     min-height: 300px; 
 }
 
-/* --- Botón Volver --- */
+/* --- Botones de Texto --- */
 .btn-back {
     display: inline-block;
     margin-bottom: 1.5rem;
@@ -281,7 +307,22 @@ input[type="file"]::file-selector-button:hover {
     transform: translateX(-3px);
 }
 
-/* --- Gráfica de Entropía --- */
+.btn-text-link {
+    background: none;
+    border: none;
+    color: #0056b3;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    text-align: left;
+    width: fit-content;
+}
+.btn-text-link:hover {
+    color: #003d82;
+}
+
+/* --- Entropía --- */
 #details-entropia {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
@@ -304,38 +345,222 @@ input[type="file"]::file-selector-button:hover {
     margin-top: 0;
 }
 
-/* Arreglo para la expansión infinita de la gráfica */
+/* --- GRÁFICAS (Metropolis y LDA) --- */
 .chart-container {
     position: relative;
     margin: 0 auto;
-    height: 250px; /* Altura fija para el contenedor */
-    width: 100%;
+    width: 100%; /* Siempre llena el ancho disponible */
+    /* Eliminamos max-width para que crezca */
 }
 
-#grafica-entropia {
+/* Tamaños específicos para Metropolis */
+.mh-trace {
+    height: 250px;
+    margin-bottom: 2rem;
+}
+.mh-hist {
+    height: 400px; /* Hacemos el histograma más alto */
+}
+.mh-3d {
+    height: 600px; /* Plotly necesita espacio */
+}
+.full-width-col { grid-column: 1 / -1; }
+.help-text-blue { color: #0056b3; font-weight: 500; font-size: 0.8rem; }
+.help-text-small { color: #666; font-size: 0.8rem; }
+
+/* Canvas ajustado */
+canvas {
     width: 100% !important;
     height: 100% !important;
 }
 
-.lista-palabras-topico li {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
+/* --- CLASES UTILITARIAS Y DE LIMPIEZA --- */
+
+/* Contenedor principal limitado (usado en index y home) */
+.container-limited {
+    max-width: 900px;
+}
+
+/* Títulos de sección */
+.section-title {
+    font-size: 1.8rem;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 1rem;
+}
+
+/* Grilla de herramientas (Index) */
+.tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.tool-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: #333;
+    transition: box-shadow 0.2s, transform 0.2s;
+    background-color: #fdfdfd;
+    display: block; /* Asegura que el link ocupe el espacio */
+}
+
+.tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.07);
+}
+
+.tool-card h3 {
+    margin-top: 0;
+    color: #0056b3;
+    border-bottom: none;
+    font-size: 1.3rem;
+}
+
+.tool-card p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #555;
+}
+
+/* Markov Textarea */
+.textarea-full {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    min-height: 150px; /* Altura mínima */
+    resize: vertical;
+}
+
+/* Input pequeño (Markov) */
+.input-small {
+    max-width: 200px;
+}
+
+/* Contenedor de resultados Markov */
+.markov-result-box {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 100px;
+    line-height: 1.7;
+    white-space: pre-wrap; /* Respeta saltos de línea */
+}
+
+/* Selectores (LDA y Otros) */
+.select-full {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+}
+
+/* Botón de ejecución con margen superior */
+.btn-submit-mt {
+    margin-top: 1.5rem;
+}
+
+/* Configuración Avanzada (Grid oculta) */
+.config-advanced {
+    margin-top: 1rem;
+}
+/* --- Nuevos Estilos para Tabla Markov --- */
+#contenedor-transiciones {
+    flex: 1; /* Ocupa el espacio restante */
+    overflow-x: auto; /* Permite scroll horizontal si la tabla es muy ancha */
+}
+
+.markov-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px; /* Ojo: border-radius en tablas requiere border-collapse: separate a veces, pero así se ve bien en contenedores */
+}
+
+.markov-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #0056b3;
+}
+
+.markov-table th {
+    text-align: left;
+    padding: 12px 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.markov-table td {
+    padding: 10px 15px;
     border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.markov-table tr:last-child td {
+    border-bottom: none;
+}
+
+.markov-table tr:hover {
+    background-color: #fbfbfb;
+}
+
+/* Estilo para las "píldoras" de probabilidad */
+.prob-badge {
+    display: inline-block;
+    background-color: #eef6ff;
+    color: #0056b3;
+    border: 1px solid #d0e1f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-right: 6px;
+    margin-bottom: 4px;
     font-family: monospace;
 }
-/* Botón estilo enlace para configuración avanzada */
-.btn-text-link {
-    background: none;
-    border: none;
-    color: #0056b3;
-    text-decoration: underline;
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 0.5rem 0;
-    text-align: left;
-    width: fit-content;
+
+.prob-badge span {
+    font-weight: bold;
 }
-.btn-text-link:hover {
-    color: #003d82;
+/* --- Layout de Columna (Para Markov) --- */
+.column-layout {
+    display: flex;
+    flex-direction: column !important; /* Fuerza uno debajo del otro */
+    gap: 1.5rem;
+}
+
+/* Aseguramos que los hijos ocupen el ancho completo */
+.column-layout > div, 
+.column-layout #controles-resultados, 
+.column-layout #contenedor-transiciones {
+    width: 100%;
+    flex: none; /* Quita la flexibilidad de columnas */
+    max-width: none; /* Quita restricciones de ancho */
+}
+
+/* Ajuste específico para que el panel de controles se vea bien estirado */
+.column-layout #controles-resultados {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.column-layout #controles-resultados .form-group {
+    margin-bottom: 0;
+    flex: 1; /* El input toma espacio */
+}
+
+.column-layout #btn-guardar {
+    margin-top: 0;
+    width: auto; /* El botón ya no es full width */
+    padding: 0.75rem 1.5rem;
 }

@@ -4,6 +4,7 @@ from app.LectorDocumentos import LectorDocumentos
 from app.ProcesadorTexto import ProcesadorTexto
 from app.ModeloLDA_DesdeCero import ModeloLDA_DesdeCero
 from app.GeneradorMarkov import GeneradorMarkov
+from app.MetropolisHasting import MetropolisHastings
 
 app = Flask(__name__)
 
@@ -23,6 +24,10 @@ def herramienta_lda():
 @app.route('/markov')
 def herramienta_markov():
     return render_template('markov.html')
+
+@app.route('/metropolis')
+def herramienta_metropolis():
+    return render_template('metropolis.html')
 
 # --- RUTAS DE API ---
 @app.route('/api/procesar', methods=['POST'])
@@ -123,10 +128,33 @@ def generar_markov_api():
 
         generador = GeneradorMarkov(texto_fuente)
         texto_nuevo = generador.generar_texto(num_palabras)
-        return jsonify({"texto_generado": texto_nuevo})
+        
+        # --- ¡NUEVO! Obtener datos estadísticos ---
+        # Devolvemos todo el modelo para que el JS lo filtre
+        matriz_datos = generador.obtener_datos_visualizacion() 
+        
+        return jsonify({
+            "texto_generado": texto_nuevo,
+            "matriz": matriz_datos # Enviamos la matriz al frontend
+        })
 
     except Exception as e:
         print(f"❌ Error Markov: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/metropolis/run', methods=['POST'])
+def run_metropolis_api():
+    try:
+        # Recibimos todo el JSON de parámetros
+        params = request.get_json()
+        
+        mh = MetropolisHastings()
+        # Pasamos el diccionario completo al método ejecutar
+        resultados = mh.ejecutar(params)
+        
+        return jsonify(resultados)
+    except Exception as e:
+        print(f"Error en Metropolis: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

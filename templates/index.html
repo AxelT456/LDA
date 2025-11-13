@@ -5,42 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toolkit de NLP</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <style>
-        /* Estilos simples para las "cards" del menú */
-        .tool-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        .tool-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-decoration: none;
-            color: #333;
-            transition: box-shadow 0.2s, transform 0.2s;
-            background-color: #fdfdfd;
-        }
-        .tool-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.07);
-        }
-        .tool-card h3 {
-            margin-top: 0;
-            color: #0056b3;
-            border-bottom: none;
-            font-size: 1.3rem;
-        }
-        .tool-card p {
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-    </style>
 </head>
 <body>
-    <main style="max-width: 900px;">
+    <main class="container-limited">
         <section>
-            <h3 style="font-size: 1.8rem; border-bottom: 2px solid #f0f0f0;">
+            <h3 class="section-title">
                 🧰 Toolkit de Procesamiento de Lenguaje
             </h3>
             <p>Selecciona una de las herramientas para comenzar:</p>
@@ -61,8 +30,15 @@
                         basado en las probabilidades de las palabras (Markov).
                     </p>
                 </a>
-                
-                </div>
+
+                <a href="/metropolis" class="tool-card">
+                    <h3>🎲 Metropolis-Hastings</h3>
+                    <p>
+                        Simulación interactiva MCMC. Visualiza cómo un algoritmo
+                        "caminante" descubre una distribución estadística compleja.
+                    </p>
+                </a>
+            </div>
         </section>
     </main>
 </body>

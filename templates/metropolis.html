@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Metropolis-Hastings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <main>
+        <a href="/" class="btn-back">&larr; Volver al Toolkit</a>
+        
+        <section id="configuracion">
+            <h3>🎲 Algoritmo Metropolis-Hastings</h3>
+            <p>Simulación de distribuciones 1D y 2D usando MCMC.</p>
+            
+            <form id="form-metropolis">
+                <div class="form-group mb-large">
+                    <label for="distribucion">Distribución Objetivo:</label>
+                    <select id="distribucion" class="input-full">
+                        <option value="bivariada">Bivariada (3D - Dos Montañas)</option>
+                        <option value="bimodal">Bimodal (1D)</option>
+                        <option value="poisson">Poisson (1D Discreta)</option>
+                        <option value="binomial">Binomial (1D Discreta)</option>
+                        <option value="beta">Beta (1D Acotada)</option>
+                    </select>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Iteraciones:</label>
+                        <input type="number" id="iteraciones" value="3000" min="100" max="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>Tamaño del Paso (Sigma):</label>
+                        <input type="number" id="sigma" value="0.5" step="0.1" min="0.1">
+                        <small class="help-text">Varianza de la propuesta.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Inicio X:</label>
+                        <input type="number" id="inicio_x" value="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Inicio Y:</label>
+                        <input type="number" id="inicio_y" value="0" step="0.1">
+                    </div>
+
+                    <div class="form-group params-poisson hidden">
+                        <label>Lambda (λ):</label>
+                        <input type="number" id="lambda" value="4" step="0.1" min="0.1">
+                    </div>
+
+                    <div class="form-group params-binomial hidden">
+                        <label>Intentos (N):</label>
+                        <input type="number" id="n_binom" value="10" min="1">
+                    </div>
+                    <div class="form-group params-binomial hidden">
+                        <label>Probabilidad (p):</label>
+                        <input type="number" id="p_binom" value="0.5" step="0.01" min="0" max="1">
+                    </div>
+
+                    <div class="form-group params-beta hidden">
+                        <label>Alpha (α):</label>
+                        <input type="number" id="alpha_beta" value="2.0" step="0.1" min="0.1">
+                    </div>
+                    <div class="form-group params-beta hidden">
+                        <label>Beta (β):</label>
+                        <input type="number" id="beta_beta" value="2.0" step="0.1" min="0.1">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-ejecutar" class="mt-medium">Ejecutar Simulación</button>
+            </form>
+        </section>
+
+        <section id="resultados" class="hidden">
+            <h3>📊 Resultados</h3>
+            
+            <div class="stats-box">
+                <strong>Tasa de Aceptación:</strong> <span id="tasa-valor">0</span>% 
+            </div>
+
+            <div class="resultados-wrapper">
+                <div class="full-width">
+                    <h4>1. Análisis de la Cadena (1D)</h4>
+                    <div class="chart-container mh-trace">
+                        <canvas id="chart-trace"></canvas>
+                    </div>
+                    <div class="chart-container mh-hist">
+                        <canvas id="chart-hist"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="full-width">
+                <h4>2. Reconstrucción de la Superficie (3D)</h4>
+                <p>
+                    Visualización de la densidad conjunta generada por el caminante. Puedes rotar y hacer zoom.
+                </p>
+                <div id="container-3d" class="mh-3d">
+                    <div id="plotly-div"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/metropolis.js') }}"></script>
+</body>
+</html>

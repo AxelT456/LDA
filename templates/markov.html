@@ -16,22 +16,45 @@
             <form id="form-markov">
                 <div class="form-group">
                     <label for="texto_fuente">1. Pega tu texto fuente:</label>
-                    <textarea id="texto_fuente" rows="10" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem;"></textarea>
+                    <textarea id="texto_fuente" rows="10" class="textarea-full"></textarea>
                 </div>
 
-                <div class="form-group" style="max-width: 200px;">
+                <div class="form-group input-small">
                     <label for="num_palabras">2. Palabras a generar:</label>
                     <input type="number" id="num_palabras" value="100" min="10" max="500">
                 </div>
                 
-                <button type="submit" id="btn-ejecutar">Generar Texto</button>
+                <button type="submit" id="btn-ejecutar" class="btn-submit-mt">Generar Texto</button>
             </form>
         </section>
 
         <section id="resultados" class="hidden">
             <h3>📜 Texto Generado</h3>
             <div id="estado-proceso"></div>
-            <div id="contenedor-resultado" style="background-color: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; min-height: 100px; line-height: 1.7;">
+            
+            <div id="contenedor-resultado" class="markov-result-box mb-large"></div>
+
+            <div id="seccion-estadisticas" class="hidden">
+                <h3 class="mt-medium" style="border-top: 1px solid #eee; padding-top: 1.5rem;">
+                    📊 Matriz de Probabilidades (Cerebro del Modelo)
+                </h3>
+                
+                <div class="resultados-wrapper column-layout">
+                    <div id="controles-resultados">
+                        <div class="form-group">
+                            <label for="palabras_visibles">Palabras a mostrar:</label>
+                            <input type="number" id="palabras_visibles" value="50" min="1" max="500">
+                            <small class="help-text">Muestra las palabras con más conexiones.</small>
+                        </div>
+                        
+                        <button id="btn-guardar" class="btn-secundario">
+                            Guardar Modelo (JSON)
+                        </button>
+                    </div>
+                    
+                    <div id="contenedor-transiciones">
+                        </div>
+                </div>
             </div>
         </section>
     </main>
