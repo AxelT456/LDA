@@ -32,6 +32,113 @@ document.addEventListener('DOMContentLoaded', () => {
     let graficaEntropiaInstance = null;
     let datosCompletosTopicos = [];
 
+    //-----------------------
+    //-Boton para topicos ideales
+    //------------------------
+
+    // --- Selectores para Optimización ---
+    const btnOptimizar = document.getElementById('btn-optimizar');
+    const contenedorOptimizacion = document.getElementById('contenedor-optimizacion');
+    const canvasOptimizacion = document.getElementById('grafica-optimizacion');
+    let chartOptimizacion = null;
+
+    // --- EVENTO: Click en "Calcular K Ideal" ---
+    btnOptimizar.addEventListener('click', () => {
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert("⚠️ Por favor, selecciona un archivo PDF primero.");
+            return;
+        }
+
+        // UI: Desactivar botón y mostrar carga
+        const textoOriginal = btnOptimizar.textContent;
+        btnOptimizar.disabled = true;
+        btnOptimizar.textContent = "⏳ Calculando...";
+        btnOptimizar.style.opacity = "0.7";
+        
+        // Preparar FormData (Solo necesitamos el archivo)
+        const formData = new FormData();
+        formData.append('pdf_file', fileInput.files[0]);
+
+        // Fetch a la nueva API
+        fetch('/api/lda/optimizar', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error: " + data.error);
+                return;
+            }
+            
+            // Mostrar contenedor y graficar
+            contenedorOptimizacion.classList.remove('hidden');
+            renderizarGraficaOptimizacion(data);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error al calcular K óptimo.");
+        })
+        .finally(() => {
+            // Restaurar botón
+            btnOptimizar.disabled = false;
+            btnOptimizar.textContent = textoOriginal;
+            btnOptimizar.style.opacity = "1";
+        });
+    });
+
+    // --- FUNCIÓN: Renderizar Gráfica K vs Entropía ---
+    function renderizarGraficaOptimizacion(datos) {
+        const ctx = canvasOptimizacion.getContext('2d');
+        
+        const labels = datos.map(d => `K=${d.k}`);
+        const values = datos.map(d => d.entropia);
+
+        if (chartOptimizacion) chartOptimizacion.destroy();
+
+        chartOptimizacion = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Entropía Final (Menor es mejor)',
+                    data: values,
+                    borderColor: '#e67e22', // Naranja para diferenciar
+                    backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#d35400',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Entropía: ${ctx.parsed.y.toFixed(4)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: { title: { display: true, text: 'Entropía (Perplejidad)' } },
+                    x: { title: { display: true, text: 'Número de Tópicos (K)' } }
+                },
+                onClick: (e, elements) => {
+                    // ¡Truco extra! Si hacen click en un punto, actualizamos el input K
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const kElegido = datos[index].k;
+                        document.getElementById('num_topicos').value = kElegido;
+                        // Disparar evento input para actualizar placeholder de Alpha
+                        document.getElementById('num_topicos').dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+        });
+    }
     // ------------------------------------------------------
     // 1. LÓGICA DE INTERFAZ (Placeholder y Toggle)
     // ------------------------------------------------------

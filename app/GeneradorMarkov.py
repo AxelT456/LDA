@@ -111,4 +111,4 @@ class GeneradorMarkov:
         
         if top_n:
             return datos[:top_n]
-        return datos
+        return datos    

@@ -564,3 +564,46 @@ canvas {
     width: auto; /* El botón ya no es full width */
     padding: 0.75rem 1.5rem;
 }
+/* --- ADAPTACIÓN LDA A MODO COLUMNA (Full Width) --- */
+
+/* 1. Romper el estilo de sidebar lateral */
+.column-layout #controles-resultados {
+    width: 100%;
+    max-width: 100%; /* Quitamos el límite de 300px */
+    flex: none;      /* Quitamos el flex fijo */
+    
+    /* Diseño horizontal para los controles */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end; /* Alinear abajo para que el input cuadre con el botón */
+    gap: 1.5rem;
+}
+
+/* 2. Ajustar el input numérico */
+.column-layout #controles-resultados .form-group {
+    width: auto; /* Que ocupe solo lo necesario */
+    min-width: 200px;
+    margin-bottom: 0; /* Quitamos margen inferior porque ahora están en fila */
+}
+
+/* 3. Ajustar el botón de guardar */
+.column-layout #btn-guardar {
+    width: auto; /* Botón tamaño natural */
+    margin-top: 0; /* Alinear con el input */
+    padding: 0.75rem 1.5rem;
+}
+
+/* 4. Ajustar la Gráfica de Entropía (Desplegable) */
+.column-layout #details-entropia {
+    width: 100%;
+    flex-basis: 100%; /* Forzar que ocupe una línea nueva abajo */
+    margin-top: 1rem;
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+/* 5. Ajustar el contenedor de la gráfica para que sea ancho pero no gigante */
+.column-layout .chart-container {
+    height: 300px; 
+    max-width: 100%; /* Usar todo el ancho disponible */
+}

@@ -50,6 +50,7 @@ Este toolkit actualmente contiene dos herramientas principales:
 3.  Instala las dependencias de Python:
     ```bash
     pip install Flask numpy spacy pypdf
+    pip install numba
     ```
 
 4.  **¡IMPORTANTE!** Descarga el modelo de español para `spaCy`:

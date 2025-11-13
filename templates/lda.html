@@ -34,9 +34,24 @@
                 <p>2. Configuración del modelo:</p>
                 
                 <div class="form-grid">
-                    <div class="form-group full-width-col">
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="num_topicos">Tópicos (K):</label>
-                        <input type="number" id="num_topicos" value="10" min="2" max="50">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="num_topicos" value="10" min="2" max="50" style="flex: 1;">
+                            
+                            <button type="button" id="btn-optimizar" style="background-color: #6c757d; border: none; color: white; padding: 0 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                                🔍 Calcular K Ideal
+                            </button>
+                        </div>
+                        <small class="help-text">Haz clic para graficar Entropía vs. K y encontrar el "codo".</small>
+                    </div>
+                </div>
+
+                <div id="contenedor-optimizacion" class="hidden" style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+                    <h4 style="margin-top: 0; color: #555;">📈 Análisis de Tópicos Óptimos</h4>
+                    <p style="font-size: 0.9rem;">El punto más bajo (o donde la curva se aplana) suele ser el número ideal de tópicos.</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="grafica-optimizacion"></canvas>
                     </div>
                 </div>
 
@@ -84,7 +99,7 @@
             
             <div id="estado-proceso"></div>
 
-            <div class="resultados-wrapper">
+            <div class="resultados-wrapper column-layout">
                 
                 <div id="controles-resultados" class="hidden"> 
                     <div class="form-group">

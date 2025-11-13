@@ -21,7 +21,7 @@
                     <select id="distribucion" class="input-full">
                         <option value="bivariada">Bivariada (3D - Dos Montañas)</option>
                         <option value="bimodal">Bimodal (1D)</option>
-                        <option value="poisson">Poisson (1D Discreta)</option>
+                        <option value="student">T-Student (1D Colas Pesadas)</option> <option value="chi2">Chi-Cuadrada (1D Asimétrica)</option> <option value="fisher">Fisher (1D Varianza)</option> <option value="poisson">Poisson (1D Discreta)</option>
                         <option value="binomial">Binomial (1D Discreta)</option>
                         <option value="beta">Beta (1D Acotada)</option>
                     </select>
@@ -37,7 +37,6 @@
                         <input type="number" id="sigma" value="0.5" step="0.1" min="0.1">
                         <small class="help-text">Varianza de la propuesta.</small>
                     </div>
-                    
                     <div class="form-group">
                         <label>Inicio X:</label>
                         <input type="number" id="inicio_x" value="0" step="0.1">
@@ -47,28 +46,30 @@
                         <input type="number" id="inicio_y" value="0" step="0.1">
                     </div>
 
-                    <div class="form-group params-poisson hidden">
-                        <label>Lambda (λ):</label>
-                        <input type="number" id="lambda" value="4" step="0.1" min="0.1">
+                    <div class="form-group params-student hidden">
+                        <label>Grados Libertad (ν):</label>
+                        <input type="number" id="nu" value="5" min="1" step="0.1">
                     </div>
 
-                    <div class="form-group params-binomial hidden">
-                        <label>Intentos (N):</label>
-                        <input type="number" id="n_binom" value="10" min="1">
-                    </div>
-                    <div class="form-group params-binomial hidden">
-                        <label>Probabilidad (p):</label>
-                        <input type="number" id="p_binom" value="0.5" step="0.01" min="0" max="1">
+                    <div class="form-group params-chi2 hidden">
+                        <label>Grados Libertad (k):</label>
+                        <input type="number" id="k_chi" value="3" min="1" step="0.1">
                     </div>
 
-                    <div class="form-group params-beta hidden">
-                        <label>Alpha (α):</label>
-                        <input type="number" id="alpha_beta" value="2.0" step="0.1" min="0.1">
+                    <div class="form-group params-fisher hidden">
+                        <label>G.L. Numerador (d1):</label>
+                        <input type="number" id="d1" value="10" min="1">
                     </div>
-                    <div class="form-group params-beta hidden">
-                        <label>Beta (β):</label>
-                        <input type="number" id="beta_beta" value="2.0" step="0.1" min="0.1">
+                    <div class="form-group params-fisher hidden">
+                        <label>G.L. Denominador (d2):</label>
+                        <input type="number" id="d2" value="20" min="1">
                     </div>
+
+                    <div class="form-group params-poisson hidden"><label>Lambda (λ):</label><input type="number" id="lambda" value="4" step="0.1"></div>
+                    <div class="form-group params-binomial hidden"><label>N:</label><input type="number" id="n_binom" value="10"></div>
+                    <div class="form-group params-binomial hidden"><label>p:</label><input type="number" id="p_binom" value="0.5" step="0.01"></div>
+                    <div class="form-group params-beta hidden"><label>Alpha:</label><input type="number" id="alpha_beta" value="2"></div>
+                    <div class="form-group params-beta hidden"><label>Beta:</label><input type="number" id="beta_beta" value="2"></div>
                 </div>
 
                 <button type="submit" id="btn-ejecutar" class="mt-medium">Ejecutar Simulación</button>

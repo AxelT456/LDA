@@ -5,9 +5,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectDistribucion = document.getElementById('distribucion');
     
     // Grupos de parámetros
-    const paramsPoisson = document.querySelectorAll('.params-poisson');
-    const paramsBinomial = document.querySelectorAll('.params-binomial');
-    const paramsBeta = document.querySelectorAll('.params-beta');
+    const gruposParams = {
+        'poisson': document.querySelectorAll('.params-poisson'),
+        'binomial': document.querySelectorAll('.params-binomial'),
+        'beta': document.querySelectorAll('.params-beta'),
+        'student': document.querySelectorAll('.params-student'),
+        'chi2': document.querySelectorAll('.params-chi2'),
+        'fisher': document.querySelectorAll('.params-fisher')
+    };
 
     let chartTrace = null;
     let chartHist = null;
@@ -15,13 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. CAMBIAR VISIBILIDAD DE INPUTS
     selectDistribucion.addEventListener('change', () => {
         const tipo = selectDistribucion.value;
-        paramsPoisson.forEach(el => el.classList.add('hidden'));
-        paramsBinomial.forEach(el => el.classList.add('hidden'));
-        paramsBeta.forEach(el => el.classList.add('hidden'));
+        
+        // Ocultar todo primero
+        Object.values(gruposParams).forEach(grupo => {
+            grupo.forEach(el => el.classList.add('hidden'));
+        });
 
-        if (tipo === 'poisson') paramsPoisson.forEach(el => el.classList.remove('hidden'));
-        if (tipo === 'binomial') paramsBinomial.forEach(el => el.classList.remove('hidden'));
-        if (tipo === 'beta') paramsBeta.forEach(el => el.classList.remove('hidden'));
+        // Mostrar el seleccionado si existe en el mapa
+        if (gruposParams[tipo]) {
+            gruposParams[tipo].forEach(el => el.classList.remove('hidden'));
+        }
     });
 
     // 2. ENVIAR Y GRAFICAR
@@ -31,17 +39,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {
             distribucion: selectDistribucion.value,
             iteraciones: document.getElementById('iteraciones').value,
-            
-            // --- ¡CAMBIO! Ahora enviamos X e Y por separado ---
             inicio_x: document.getElementById('inicio_x').value,
             inicio_y: document.getElementById('inicio_y').value,
-            
             sigma: document.getElementById('sigma').value,
+            
+            // Params existentes
             lambda: document.getElementById('lambda').value,
             n: document.getElementById('n_binom').value,
             p: document.getElementById('p_binom').value,
             alpha_beta: document.getElementById('alpha_beta').value,
-            beta_beta: document.getElementById('beta_beta').value
+            beta_beta: document.getElementById('beta_beta').value,
+
+            // ¡Nuevos Params!
+            nu: document.getElementById('nu').value,
+            k_chi: document.getElementById('k_chi').value,
+            d1: document.getElementById('d1').value,
+            d2: document.getElementById('d2').value
         };
 
         seccionResultados.classList.remove('hidden');
@@ -58,52 +71,87 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             tasaValor.textContent = data.tasa_aceptacion.toFixed(2);
-
-            // Renderizar SIEMPRE ambas vistas
             renderChartJS(data);
             renderPlotlySurface(data);
         });
     });
 
-    // --- RENDER 2D (Chart.js) ---
+    // --- RENDER 2D (Chart.js) con Burn-in ---
     function renderChartJS(data) {
         const ctxTrace = document.getElementById('chart-trace').getContext('2d');
         const ctxHist = document.getElementById('chart-hist').getContext('2d');
 
-        // Traceplot
+        // 1. Procesar datos para Burn-in (Primer 10%)
+        const totalPuntos = data.muestras_x.length;
+        const puntoCorte = Math.floor(totalPuntos * 0.1); // 10% de Burn-in
+
+        // Separamos datos en dos series, pero para que la línea sea continua,
+        // la serie "Real" debe empezar donde termina la "Burn-in".
+        
+        // Datos Burn-in (0 a 10%)
+        const dataBurnIn = data.muestras_x.slice(0, puntoCorte + 1);
+        const labelsBurnIn = dataBurnIn.map((_, i) => i);
+
+        // Datos Reales (10% a 100%)
+        // Rellenamos con 'null' al principio para que empiece a la derecha
+        const dataReal = new Array(puntoCorte).fill(null).concat(data.muestras_x.slice(puntoCorte));
+        const labelsTotal = data.muestras_x.map((_, i) => i);
+
+        // TRACEPLOT MEJORADO
         if (chartTrace) chartTrace.destroy();
         chartTrace = new Chart(ctxTrace, {
             type: 'line',
             data: {
-                labels: data.muestras_x.map((_, i) => i),
-                datasets: [{
-                    label: 'Caminante (X)',
-                    data: data.muestras_x,
-                    borderColor: 'rgba(54, 162, 235, 0.6)',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    fill: false
-                }]
+                labels: labelsTotal,
+                datasets: [
+                    {
+                        label: 'Burn-in (Calentamiento)',
+                        data: dataBurnIn,
+                        borderColor: 'rgba(200, 200, 200, 0.8)', // Gris/Rojo claro
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Muestreo (Convergencia)',
+                        data: dataReal,
+                        borderColor: 'rgba(54, 162, 235, 0.8)', // Azul
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { title: { display: true, text: 'Traceplot (Evolución Temporal)' } },
-                animation: false,
-                scales: { x: { display: false } } // Ocultar etiquetas X para limpiar
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    title: { display: true, text: 'Traceplot con Burn-in (Primer 10%)' },
+                    tooltip: { enabled: true } 
+                },
+                scales: { 
+                    x: { title: { display: true, text: 'Iteraciones' } },
+                    y: { title: { display: true, text: 'Valor de X' } } 
+                },
+                animation: false
             }
         });
 
-        // Histograma 1D
+        // HISTOGRAMA (Solo usamos los datos post-burn-in para ser más exactos)
         if (chartHist) chartHist.destroy();
+        
+        // Nota: El histograma que viene del backend ya usa todos los datos.
+        // Visualmente está bien, pero idealmente debería calcularse sin el burn-in.
+        // Por ahora usaremos los datos del backend para coincidir con la gráfica 3D.
         chartHist = new Chart(ctxHist, {
             type: 'bar',
             data: {
                 labels: data.hist1d_x.map(n => n.toFixed(2)),
                 datasets: [{
-                    label: 'Distribución Marginal X',
+                    label: 'Densidad Estimada',
                     data: data.hist1d_y,
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     barPercentage: 1.0,
                     categoryPercentage: 1.0
                 }]
@@ -111,48 +159,54 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { title: { display: true, text: 'Histograma (Vista Frontal)' } }
+                plugins: { title: { display: true, text: 'Distribución Resultante' } }
             }
         });
     }
 
-    // --- RENDER 3D (Plotly Surface) ---
+    // --- RENDER 3D MEJORADO ---
     function renderPlotlySurface(data) {
         const plotDiv = 'plotly-div';
         
-        // Datos para la superficie 3D
+        // Detectar si es discreta para cambiar el estilo visual
+        // (Esto lo deducimos si los inputs de poisson/binomial están visibles o por lógica simple)
+        // Pero 'surface' funciona bien para ambos si ajustamos contornos.
+
         const trace = {
-            z: data.surface_z, // Matriz de alturas
-            x: data.surface_x, // Coordenadas X
-            y: data.surface_y, // Coordenadas Y
-            type: 'surface',   // ¡Esto hace la magia 3D real!
+            z: data.surface_z,
+            x: data.surface_x,
+            y: data.surface_y,
+            type: 'surface',
             colorscale: 'Viridis',
             contours: {
-                z: {
-                    show: true,
-                    usecolormap: true,
-                    highlightcolor: "#42f462",
-                    project: { z: true } // Dibuja el contorno plano abajo también
-                }
-            }
+                z: { 
+                    show: true, 
+                    usecolormap: true, 
+                    highlightcolor: "#42f462", 
+                    project: { z: true } 
+                },
+                // Agregamos líneas de contorno negras para resaltar la forma
+                x: { show: true, color: 'rgba(0,0,0,0.1)' },
+                y: { show: true, color: 'rgba(0,0,0,0.1)' }
+            },
+            // Suavizado: false ayuda a que las discretas se vean más "cuadradas"
+            // pero true se ve más bonito para continuas. Dejémoslo automático.
         };
 
         const layout = {
-            title: 'Superficie de Densidad Estimada (3D)',
+            title: 'Superficie de Densidad 3D',
             autosize: true,
             scene: {
                 xaxis: { title: 'X' },
                 yaxis: { title: 'Y' },
-                zaxis: { title: 'Densidad' },
-                camera: {
-                    eye: { x: 1.5, y: 1.5, z: 1.2 } // Ángulo de cámara inicial
-                }
+                zaxis: { title: 'Probabilidad' },
+                camera: { eye: { x: 1.5, y: 1.5, z: 1.2 } }
             },
             margin: { t: 50, r: 10, l: 10, b: 10 }
         };
 
-        const config = { responsive: true };
-
-        Plotly.newPlot(plotDiv, [trace], layout, config);
+        Plotly.newPlot(plotDiv, [trace], layout, { responsive: true });
     }
+
+
 });

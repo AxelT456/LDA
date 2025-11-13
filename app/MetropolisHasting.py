@@ -5,8 +5,7 @@ class MetropolisHastings:
     def __init__(self):
         pass
 
-    # --- FUNCIONES DE DENSIDAD (PDF/PMF) ---
-    # (Estas funciones calculan la probabilidad de un punto)
+    # --- FUNCIONES DE DENSIDAD ---
 
     def _bimodal_pdf(self, x):
         return np.exp(-0.5 * ((x + 2) / 0.8) ** 2) + 1.5 * np.exp(-0.5 * ((x - 2) / 0.8) ** 2)
@@ -26,8 +25,32 @@ class MetropolisHastings:
         try: return (x ** (alpha - 1)) * ((1 - x) ** (beta - 1))
         except: return 0.0
 
+    # --- ¡NUEVAS! ---
+    
+    def _student_t_pdf(self, x, nu):
+        """ T-Student: Similar a normal pero colas pesadas """
+        # Proporcional a: (1 + x^2/nu)^(-(nu+1)/2)
+        return (1 + (x**2)/nu) ** (-(nu + 1) / 2)
+
+    def _chi_squared_pdf(self, x, k):
+        """ Chi-Cuadrada: Solo x > 0 """
+        if x <= 0: return 0.0
+        try:
+            # Proporcional a: x^(k/2 - 1) * e^(-x/2)
+            return (x ** (k/2 - 1)) * np.exp(-x/2)
+        except: return 0.0
+
+    def _fisher_pdf(self, x, d1, d2):
+        """ Fisher-Snedecor: Solo x > 0 """
+        if x <= 0: return 0.0
+        try:
+            # Proporcional a: x^(d1/2 - 1) / (d1*x + d2)^((d1+d2)/2)
+            numerador = x ** (d1/2 - 1)
+            denominador = (d1 * x + d2) ** ((d1 + d2) / 2)
+            return numerador / denominador
+        except: return 0.0
+
     def _bivariada_pdf(self, x, y):
-        # Dos montañas acopladas en 2D
         z1 = np.exp(-1 * ((x + 1)**2 + (y + 1)**2))
         z2 = 0.8 * np.exp(-0.5 * ((x - 1.5)**2 + (y - 1.5)**2))
         return z1 + z2
@@ -37,26 +60,27 @@ class MetropolisHastings:
     def ejecutar(self, params):
         tipo = params.get('distribucion', 'bimodal')
         n_iteraciones = int(params.get('iteraciones', 2000))
-        
-        # --- ¡CAMBIO! Recibir X e Y independientes ---
-        # Si no vienen, usamos 0 como default
         x_actual = float(params.get('inicio_x', 0))
-        y_actual = float(params.get('inicio_y', 0))
-        
+        y_actual = float(params.get('inicio_y', 0)) # Para 3D o Bivariada
         sigma = float(params.get('sigma', 1.0))
 
-        # Params específicos
+        # Parametros existentes
         lam = float(params.get('lambda', 4))
         n_binom = int(params.get('n', 10))
         p_binom = float(params.get('p', 0.5))
         alpha_beta = float(params.get('alpha_beta', 2.0))
         beta_beta = float(params.get('beta_beta', 2.0))
 
-        # Validación inicial para Beta (debe estar entre 0 y 1)
-        # Si el usuario pone un inicio fuera de rango, lo corregimos para evitar crash
-        if tipo == 'beta':
-            if x_actual <= 0 or x_actual >= 1: x_actual = 0.5
-            if y_actual <= 0 or y_actual >= 1: y_actual = 0.5
+        # --- ¡NUEVOS PARÁMETROS! ---
+        nu_student = float(params.get('nu', 5.0))      # Grados libertad t-Student
+        k_chi = float(params.get('k_chi', 3.0))        # Grados libertad Chi2
+        d1_fisher = float(params.get('d1', 10.0))      # Grados libertad 1 Fisher
+        d2_fisher = float(params.get('d2', 20.0))      # Grados libertad 2 Fisher
+
+        # Corrección de inicio para distribuciones positivas
+        if tipo in ['chi2', 'fisher'] and x_actual <= 0:
+            x_actual = 1.0
+            y_actual = 1.0
 
         samples_x = []
         samples_y = []
@@ -64,49 +88,49 @@ class MetropolisHastings:
 
         for _ in range(n_iteraciones):
             
-            # --- 1. PROPUESTA (Salto) ---
-            if tipo in ['bimodal', 'beta', 'bivariada']:
-                # Continuo
-                x_prop = np.random.normal(x_actual, sigma)
-                y_prop = np.random.normal(y_actual, sigma)
-            else:
-                # Discreto
+            # 1. PROPUESTA
+            # Para discretas usamos redondeo, para continuas normal
+            es_discreta = tipo in ['poisson', 'binomial']
+            
+            if es_discreta:
                 salto_x = int(round(np.random.normal(0, sigma)))
                 salto_y = int(round(np.random.normal(0, sigma)))
-                # Evitar estancamiento si sigma es muy chico
                 if salto_x == 0 and sigma >= 0.5: salto_x = np.random.choice([-1, 1])
                 if salto_y == 0 and sigma >= 0.5: salto_y = np.random.choice([-1, 1])
                 x_prop = x_actual + salto_x
                 y_prop = y_actual + salto_y
+            else:
+                x_prop = np.random.normal(x_actual, sigma)
+                y_prop = np.random.normal(y_actual, sigma)
 
-            # --- 2. PROBABILIDADES ---
+            # 2. PROBABILIDADES
             if tipo == 'bivariada':
-                # Caso especial: X e Y dependen uno del otro
                 prob_act = self._bivariada_pdf(x_actual, y_actual)
                 prob_new = self._bivariada_pdf(x_prop, y_prop)
             else:
-                # Caso general: X e Y son independientes (P(x,y) = P(x)*P(y))
-                # Esto crea una "montaña simétrica" 3D para las distribuciones 1D
-                if tipo == 'bimodal':
-                    p_ax, p_nx = self._bimodal_pdf(x_actual), self._bimodal_pdf(x_prop)
-                    p_ay, p_ny = self._bimodal_pdf(y_actual), self._bimodal_pdf(y_prop)
-                elif tipo == 'poisson':
-                    p_ax, p_nx = self._poisson_pmf(x_actual, lam), self._poisson_pmf(x_prop, lam)
-                    p_ay, p_ny = self._poisson_pmf(y_actual, lam), self._poisson_pmf(y_prop, lam)
-                elif tipo == 'binomial':
-                    p_ax, p_nx = self._binomial_pmf(x_actual, n_binom, p_binom), self._binomial_pmf(x_prop, n_binom, p_binom)
-                    p_ay, p_ny = self._binomial_pmf(y_actual, n_binom, p_binom), self._binomial_pmf(y_prop, n_binom, p_binom)
-                elif tipo == 'beta':
-                    p_ax, p_nx = self._beta_pdf(x_actual, alpha_beta, beta_beta), self._beta_pdf(x_prop, alpha_beta, beta_beta)
-                    p_ay, p_ny = self._beta_pdf(y_actual, alpha_beta, beta_beta), self._beta_pdf(y_prop, alpha_beta, beta_beta)
+                # Calculamos P(x) y P(y) por separado
+                def get_prob(val):
+                    if tipo == 'bimodal': return self._bimodal_pdf(val)
+                    if tipo == 'poisson': return self._poisson_pmf(val, lam)
+                    if tipo == 'binomial': return self._binomial_pmf(val, n_binom, p_binom)
+                    if tipo == 'beta': return self._beta_pdf(val, alpha_beta, beta_beta)
+                    # Nuevas
+                    if tipo == 'student': return self._student_t_pdf(val, nu_student)
+                    if tipo == 'chi2': return self._chi_squared_pdf(val, k_chi)
+                    if tipo == 'fisher': return self._fisher_pdf(val, d1_fisher, d2_fisher)
+                    return 0.0
+
+                p_ax, p_nx = get_prob(x_actual), get_prob(x_prop)
+                p_ay, p_ny = get_prob(y_actual), get_prob(y_prop)
                 
                 prob_act = p_ax * p_ay
                 prob_new = p_nx * p_ny
 
-            # --- 3. RATIO & DECISIÓN ---
+            # 3. RATIO
             if prob_act == 0: ratio = 1.0
             else: ratio = prob_new / prob_act
 
+            # 4. DECISIÓN
             if ratio >= 1 or np.random.rand() < ratio:
                 x_actual = x_prop
                 y_actual = y_prop
@@ -118,7 +142,7 @@ class MetropolisHastings:
         # --- RESULTADOS ---
         tasa_aceptacion = (aceptados / n_iteraciones) * 100
         
-        # 1. Histograma 1D (Para Chart.js) - Solo usamos X
+        # Histogramas
         if tipo in ['poisson', 'binomial']:
             min_v, max_v = int(min(samples_x)), int(max(samples_x))
             bins_1d = np.arange(min_v, max_v + 2) - 0.5
@@ -127,31 +151,29 @@ class MetropolisHastings:
         elif tipo == 'beta':
             hist_1d, bin_edges_1d = np.histogram(samples_x, bins=50, range=(0, 1), density=True)
             centros_1d = (bin_edges_1d[:-1] + bin_edges_1d[1:]) / 2
+        elif tipo in ['chi2', 'fisher']:
+             # Limitamos rango para que no se vea feo si hay outliers lejanos
+            hist_1d, bin_edges_1d = np.histogram(samples_x, bins=50, density=True)
+            centros_1d = (bin_edges_1d[:-1] + bin_edges_1d[1:]) / 2
         else:
             hist_1d, bin_edges_1d = np.histogram(samples_x, bins=50, density=True)
             centros_1d = (bin_edges_1d[:-1] + bin_edges_1d[1:]) / 2
 
-        # 2. Matriz 3D (Para Plotly Surface) - Usamos X e Y
-        # Creamos un histograma 2D (30x30 bins) para obtener las alturas Z
+        # Generar Matriz 3D para TODAS las distribuciones
         bins_3d = 30
         range_3d = None
         if tipo == 'beta': range_3d = [[0, 1], [0, 1]]
         
+        # Esto crea la "montaña" 3D cruzando X y Y
         hist_2d, x_edges, y_edges = np.histogram2d(samples_x, samples_y, bins=bins_3d, range=range_3d, density=True)
-        
-        # Suavizado simple (opcional, para que la montaña se vea más bonita)
-        # (Si prefieres datos crudos, comenta esto, pero ayuda visualmente)
-        # hist_2d = scipy.ndimage.gaussian_filter(hist_2d, sigma=1) 
 
         return {
-            "muestras_x": samples_x, # Para Traceplot
-            "hist1d_y": hist_1d.tolist(), # Para Histograma 2D
+            "tipo": "bivariada" if tipo == 'bivariada' else "univariada",
+            "muestras_x": samples_x,
+            "hist1d_y": hist_1d.tolist(),
             "hist1d_x": centros_1d.tolist(),
-            
-            # Datos para Plotly 3D Surface
-            "surface_z": hist_2d.T.tolist(), # Transpuesta para alinear con Plotly
+            "surface_z": hist_2d.T.tolist(),
             "surface_x": ((x_edges[:-1] + x_edges[1:])/2).tolist(),
             "surface_y": ((y_edges[:-1] + y_edges[1:])/2).tolist(),
-            
             "tasa_aceptacion": tasa_aceptacion
         }
