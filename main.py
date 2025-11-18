@@ -1,6 +1,7 @@
 import json
 import hashlib
 import io
+import numpy as np
 from flask import Flask, render_template, request, jsonify
 from app.LectorDocumentos import LectorDocumentos
 from app.ProcesadorTexto import ProcesadorTexto
@@ -153,41 +154,79 @@ def procesar_lda_api():
 
 @app.route('/api/lda/optimizar', methods=['POST'])
 def optimizar_k_api():
-    print("\n🔎 Petición recibida: Buscando K ideal...")
+    """
+    Barrido inteligente de K con repetición, promedio y desviación estándar.
+    """
+    print("\n🔎 Buscando K ideal (Barrido Promediado)...")
+
     try:
         if 'pdf_file' not in request.files: return jsonify({"error": "Falta PDF"}), 400
         file = request.files['pdf_file']
         
-        # Usamos estrategia 'paginas' por defecto para optimización (más estable)
-        # Pero usamos la caché si ya se cargó ese archivo con esa estrategia
-        textos_procesados = obtener_textos_procesados(file, 'paginas')
-        
+        # 1. Cargar datos de la caché (o procesar si es nuevo)
+        estrategia = request.form.get('estrategia', 'paginas')
+        textos_procesados = obtener_textos_procesados(file, estrategia)
         if not textos_procesados: return jsonify({"error": "PDF vacío"}), 400
 
+        # 2. Obtener parámetros del barrido (del nuevo formulario)
+        k_start = int(request.form.get('k_start', 2))
+        k_end = int(request.form.get('k_end', 50))
+        k_step = int(request.form.get('k_step', 4))
+        reps = int(request.form.get('k_reps', 3)) # Repeticiones para promediar
+
+        # 3. Obtener parámetros de convergencia (del formulario avanzado)
+        iter_input = request.form.get('iteraciones')
+        iteraciones = int(iter_input) if iter_input else 1000 # Límite alto
+
+        umbral = float(request.form.get('umbral')) if request.form.get('umbral') else None
+        paciencia = int(request.form.get('paciencia')) if request.form.get('paciencia') else None
+
+        # 4. Preparar corpus base (una sola vez)
         print("   Preparando corpus base...")
         lda_base = ModeloLDA_DesdeCero(textos_procesados)
         lda_base.preparar_corpus(no_below=2, no_above=0.9)
 
-        rango_k = range(2, 51, 4) 
+        # 5. Bucle de Optimización (con repeticiones)
+        rango_k = range(k_start, k_end + 1, k_step)
         resultados = []
+        print(f"   Iniciando barrido de K (K={k_start} a {k_end}, paso {k_step}, {reps} reps)...")
 
-        print("   Iniciando barrido de K...")
         for k in rango_k:
-            historial = lda_base.entrenar(
-                num_topicos=k, 
-                iteraciones=10,
-                alpha=50.0/k,
-                beta=0.01
-            )
-            entropia_final = historial[-1]
-            resultados.append({"k": k, "entropia": entropia_final})
-            print(f"   K={k} -> Entropía (aprox): {entropia_final:.4f}")
+            entropias_rep = []
+            
+            # Bucle interno para promediar (Ej. 3 veces)
+            for r in range(reps):
+                # Usamos una semilla aleatoria diferente cada vez
+                seed_base = np.random.randint(0, 99999999)
+                
+                historial = lda_base.entrenar(
+                    num_topicos=k,
+                    iteraciones=iteraciones,
+                    alpha=50.0/k,
+                    beta=None,
+                    umbral=umbral,
+                    paciencia=paciencia,
+                    seed_base=seed_base # ¡Importante pasar la semilla!
+                )
+                entropias_rep.append(historial[-1])
+            
+            # Calcular media y desviación estándar
+            mean_val = float(np.mean(entropias_rep))
+            std_val = float(np.std(entropias_rep))
+            
+            resultados.append({
+                "k": k,
+                "mean": mean_val,
+                "std": std_val
+            })
+            print(f"   K={k} -> Entropía promedio: {mean_val:.4f} (±{std_val:.4f})")
 
         return jsonify(resultados)
 
     except Exception as e:
         print(f"❌ Error en Optimización: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 
 # --- RUTAS DE API (OTROS) ---

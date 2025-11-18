@@ -12,6 +12,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputVisibles = document.getElementById('palabras_visibles');
     const btnGuardar = document.getElementById('btn-guardar');
 
+    // --- NUEVO: Selectores del Modal ---
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalOverlay = document.getElementById('modal-info');
+
+    if (btnOpenModal) {
+        // --- EVENTO: Abrir y Cerrar Modal de Info ---
+        btnOpenModal.addEventListener('click', () => {
+            modalOverlay.classList.remove('hidden');
+        });
+
+        btnCloseModal.addEventListener('click', () => {
+            modalOverlay.classList.add('hidden');
+        });
+
+        // Cerrar también al hacer clic en el fondo
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.add('hidden');
+            }
+        });
+    }
+
     // Variable global para guardar la matriz
     let matrizCompleta = [];
 

@@ -607,3 +607,165 @@ canvas {
     height: 300px; 
     max-width: 100%; /* Usar todo el ancho disponible */
 }
+/* Botón secundario (para K Ideal) */
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    color: white;
+    padding: 0 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+.btn-secondary:disabled {
+    background-color: #999;
+    opacity: 0.7;
+}
+
+/* Contenedor para Input + Botón K Ideal */
+.k-ideal-container {
+    display: flex;
+    gap: 10px;
+}
+.k-ideal-container input {
+    flex: 1;
+}
+/* Botón de texto pequeño */
+.btn-small-link {
+    font-size: 0.85rem;
+    padding: 0;
+    margin-top: 5px;
+}
+
+/* --- NUEVOS Estilos para Layout de K Ideal --- */
+
+/* Contenedor para el texto de ayuda y el link "Configurar..." */
+.k-config-links {
+    display: flex;
+    justify-content: space-between; /* Pone el texto a la izq y el link a la der */
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+/* Contenedor de la gráfica de optimización K */
+.optimization-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+/* Contenedor de gráfica más alto (para K Ideal) */
+.chart-container-tall {
+    position: relative;
+    width: 100%;
+    height: 250px; /* Altura específica para esta gráfica */
+}
+
+.chart-title {
+    margin-top: 0;
+    color: #555;
+}
+
+.chart-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0;
+}
+/* --- NUEVO: Estilos para el Modal de Información --- */
+
+/* Contenedor del Título y Botón */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Mover el borde de H3 a este contenedor */
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.5rem;
+}
+.section-header h3 {
+    border-bottom: none; /* Quitar borde del h3 original */
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+/* Botón de Info (?) */
+.btn-info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #0056b3;
+    background-color: #f0f6ff;
+    border: 1px solid #b3d1ff;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-info-icon:hover {
+    background-color: #e0ecff;
+    transform: scale(1.1);
+}
+
+/* El fondo negro semi-transparente */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* La caja blanca del modal */
+.modal-content {
+    position: relative;
+    background-color: #ffffff;
+    padding: 2rem 2.5rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px; /* Límite de ancho */
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    font-size: 1.6rem;
+    border-bottom: none; /* Sin borde en el h3 del modal */
+}
+
+.modal-content ol {
+    padding-left: 20px;
+}
+.modal-content li {
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+/* Botón de Cerrar (X) */
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 2rem;
+    color: #aaa;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+.modal-close:hover {
+    color: #333;
+}

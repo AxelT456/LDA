@@ -12,7 +12,10 @@
         <a href="/" class="btn-back">&larr; Volver al Toolkit</a>
         
         <section id="configuracion">
-            <h3>🎲 Algoritmo Metropolis-Hastings</h3>
+            <div class="section-header">
+                <h3>🎲 Algoritmo Metropolis-Hastings</h3>
+                <button type="button" id="btn-open-modal" class="btn-info-icon" aria-label="Mostrar información">?</button>
+            </div>
             <p>Simulación de distribuciones 1D y 2D usando MCMC.</p>
             
             <form id="form-metropolis">
@@ -105,6 +108,38 @@
                 </div>
             </div>
         </section>
+
+        <div id="modal-info" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button id="btn-close-modal" class="modal-close">&times;</button>
+                <h3>¿Qué hace esta herramienta?</h3>
+                <p>
+                    Esta herramienta simula el algoritmo <strong>Metropolis-Hastings (M-H)</strong>, un método MCMC (Monte Carlo por Cadenas de Markov). Es un "caminante aleatorio" que explora un paisaje de probabilidades.
+                </p>
+                
+                <h4>¿Cómo funciona el proceso?</h4>
+                <ol>
+                    <li>
+                        <strong>Inicio:</strong> Pones al "caminante" en una posición (Inicio X, Inicio Y).
+                    </li>
+                    <li>
+                        <strong>Propuesta:</strong> El caminante propone dar un paso aleatorio a una nueva posición. El tamaño del salto depende de **Sigma (σ)**.
+                    </li>
+                    <li>
+                        <strong>Decisión (El truco de M-H):</strong>
+                        <ul>
+                            <li>El caminante mide la "altura" (probabilidad) de su posición actual y de la nueva.</li>
+                            <li>Si la nueva posición es **más alta**, se mueve allí (Acepta).</li>
+                            <li>Si es **más baja**, lanza un dado. Si saca un número alto, se arriesga y se mueve a la posición más baja (Acepta). Si no, se queda quieto (Rechaza).</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Resultado:</strong> Después de miles de iteraciones, el caminante habrá pasado la mayor parte de su tiempo en las zonas de alta probabilidad (las cimas de las "montañas"). Las gráficas 2D y 3D son un mapa de calor de dónde pasó más tiempo.
+                    </li>
+                </ol>
+            </div>
+        </div>
+
     </main>
     <script src="{{ url_for('static', filename='js/metropolis.js') }}"></script>
 </body>

@@ -3,6 +3,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const seccionResultados = document.getElementById('resultados');
     const tasaValor = document.getElementById('tasa-valor');
     const selectDistribucion = document.getElementById('distribucion');
+
+    // --- NUEVO: Selectores del Modal ---
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalOverlay = document.getElementById('modal-info');
+
+    if (btnOpenModal) {
+        // --- EVENTO: Abrir y Cerrar Modal de Info ---
+        btnOpenModal.addEventListener('click', () => {
+            modalOverlay.classList.remove('hidden');
+        });
+
+        btnCloseModal.addEventListener('click', () => {
+            modalOverlay.classList.add('hidden');
+        });
+
+        // Cerrar también al hacer clic en el fondo
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.add('hidden');
+            }
+        });
+    }
     
     // Grupos de parámetros
     const gruposParams = {

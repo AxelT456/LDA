@@ -12,7 +12,10 @@
         <a href="/" class="btn-back">&larr; Volver al Toolkit</a>
 
         <section id="configuracion">
-            <h3>⚙️ Configurar y Ejecutar Análisis</h3>
+            <div class="section-header">
+                <h3>⚙️ Configurar y Ejecutar Análisis</h3>
+                <button type="button" id="btn-open-modal" class="btn-info-icon" aria-label="Mostrar información">?</button>
+            </div>
             
             <form id="form-lda">
                 
@@ -33,24 +36,47 @@
 
                 <p>2. Configuración del modelo:</p>
                 
-                <div class="form-grid">
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="num_topicos">Tópicos (K):</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="number" id="num_topicos" value="10" min="2" max="50" style="flex: 1;">
-                            
-                            <button type="button" id="btn-optimizar" style="background-color: #6c757d; border: none; color: white; padding: 0 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                                🔍 Calcular K Ideal
-                            </button>
-                        </div>
+                <div class="form-group full-width-col">
+                    <label for="num_topicos">Tópicos (K):</label>
+                    <div class="k-ideal-container">
+                        <input type="number" id="num_topicos" value="10" min="2" max="500">
+                        <button type="button" id="btn-optimizar" class="btn-secondary">
+                            🔍 Calcular K Ideal
+                        </button>
+                    </div>
+                    
+                    <div class="k-config-links">
                         <small class="help-text">Haz clic para graficar Entropía vs. K y encontrar el "codo".</small>
+                        <button type="button" id="btn-avanzada-k" class="btn-text-link btn-small-link">
+                            Configurar barrido de K...
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="config-optimizacion" class="form-grid hidden config-advanced">
+                    <div class="form-group">
+                        <label for="k_start">K Mínimo:</label>
+                        <input type="number" id="k_start" value="2">
+                    </div>
+                    <div class="form-group">
+                        <label for="k_end">K Máximo:</label>
+                        <input type="number" id="k_end" value="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="k_step">Paso (Saltos):</label>
+                        <input type="number" id="k_step" value="4">
+                    </div>
+                    <div class="form-group">
+                        <label for="k_reps">Repeticiones (Media):</label>
+                        <input type="number" id="k_reps" value="3">
+                        <small class="help-text-small">Veces que se repite por K para promediar.</small>
                     </div>
                 </div>
 
-                <div id="contenedor-optimizacion" class="hidden" style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-                    <h4 style="margin-top: 0; color: #555;">📈 Análisis de Tópicos Óptimos</h4>
-                    <p style="font-size: 0.9rem;">El punto más bajo (o donde la curva se aplana) suele ser el número ideal de tópicos.</p>
-                    <div class="chart-container" style="height: 250px;">
+                <div id="contenedor-optimizacion" class="hidden optimization-container">
+                    <h4 class="chart-title">📈 Análisis de Tópicos Óptimos</h4>
+                    <p class="chart-description">El punto más bajo (o donde la curva se aplana) suele ser el número ideal de tópicos.</p>
+                    <div class="chart-container-tall">
                         <canvas id="grafica-optimizacion"></canvas>
                     </div>
                 </div>
@@ -60,7 +86,6 @@
                 </button>
 
                 <div id="config-avanzada" class="form-grid hidden config-advanced">
-                    
                     <div class="form-group full-width-col">
                         <label for="iteraciones">Iteraciones Máximas (Límite):</label>
                         <input type="number" id="iteraciones" placeholder="Auto (Max 1000)">
@@ -68,7 +93,6 @@
                             ℹ️ Límite de seguridad. El modelo parará antes si converge.
                         </small>
                     </div>
-
                     <div class="form-group">
                         <label for="umbral">Umbral de Mejora (%):</label>
                         <input type="number" id="umbral" step="0.001" placeholder="0.01">
@@ -79,7 +103,6 @@
                         <input type="number" id="paciencia" placeholder="10">
                         <small class="help-text-small">Intentos permitidos sin mejorar.</small>
                     </div>
-
                     <div class="form-group">
                         <label for="alpha">Alpha (Doc-Tópico):</label>
                         <input type="number" id="alpha" step="0.0001" placeholder="Auto (50/K)">
@@ -96,21 +119,16 @@
 
         <section id="resultados" class="hidden"> 
             <h3>🔬 Resultados: Tópicos Descubiertos</h3>
-            
             <div id="estado-proceso"></div>
-
             <div class="resultados-wrapper column-layout">
-                
                 <div id="controles-resultados" class="hidden"> 
                     <div class="form-group">
                         <label for="num_palabras_visibles">Palabras visibles por tópico:</label>
                         <input type="number" id="num_palabras_visibles" value="10" min="1" max="30">
                     </div>
-                    
                     <button id="btn-guardar" class="btn-secundario">
                         Guardar Resultados (JSON)
                     </button>
-                    
                     <details id="details-entropia" class="hidden">
                         <summary>Ver Convergencia del Modelo (Entropía)</summary>
                         <div id="contenedor-entropia-interior">
@@ -124,15 +142,42 @@
                         </div>
                     </details>
                 </div>
-                
                 <div id="contenedor-topicos">
                     <p>Sube un PDF y configura los parámetros para ver los resultados.</p>
                 </div>
-
             </div> 
         </section>
+        <!--MODAL-->
+        <div id="modal-info" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button id="btn-close-modal" class="modal-close">&times;</button>
+                <h3>¿Qué hace esta herramienta?</h3>
+                <p>
+                    Esta herramienta utiliza <strong>Topic Modeling (LDA)</strong> para analizar el texto de tu PDF.
+                    Su objetivo es descubrir los "tópicos" (temas principales) que se esconden en el documento.
+                </p>
+                
+                <h4>¿Cómo funciona el proceso?</h4>
+                <ol>
+                    <li>
+                        <strong>División:</strong> Primero, divide tu PDF en "documentos" (según la estrategia que elijas: páginas, capítulos, etc.).
+                    </li>
+                    <li>
+                        <strong>Limpieza (NLP):</strong> Usa <code>spaCy</code> para leer cada documento, eliminar palabras comunes (como "el", "y", "de") y lematizar (convertir "corriendo" y "corrió" a su raíz "correr").
+                    </li>
+                    <li>
+                        <strong>Muestreo de Gibbs (El Motor):</strong> Asigna aleatoriamente cada palabra a uno de los <strong>K</strong> tópicos que definiste.
+                    </li>
+                    <li>
+                        <strong>Convergencia (Auto-Stop):</strong> El modelo itera miles de veces. En cada iteración, revisa cada palabra y decide si pertenece a un tópico mejor, basándose en qué otras palabras la rodean en su documento. Este proceso se detiene automáticamente cuando la <strong>Entropía</strong> (la medida de "confusión" del modelo) deja de mejorar.
+                    </li>
+                </ol>
+                <p>
+                    El resultado final son los grupos de palabras que estadísticamente aparecen juntas más a menudo.
+                </p>
+            </div>
+        </div>
     </main>
-
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

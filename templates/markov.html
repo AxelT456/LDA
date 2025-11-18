@@ -11,7 +11,10 @@
         <a href="/" class="btn-back">&larr; Volver al Toolkit</a>
         
         <section id="configuracion">
-            <h3>🔗 Generador de Texto (Cadenas de Markov)</h3>
+            <div class="section-header">
+                <h3>🔗 Generador de Texto (Cadenas de Markov)</h3>
+                <button type="button" id="btn-open-modal" class="btn-info-icon" aria-label="Mostrar información">?</button>
+            </div>
             
             <form id="form-markov">
                 <div class="form-group">
@@ -57,6 +60,38 @@
                 </div>
             </div>
         </section>
+
+        <div id="modal-info" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button id="btn-close-modal" class="modal-close">&times;</button>
+                <h3>¿Qué hace esta herramienta?</h3>
+                <p>
+                    Esta herramienta utiliza una **Cadena de Markov** simple para "aprender" el estilo de un texto
+                    y luego generar texto nuevo que imita ese estilo.
+                </p>
+                
+                <h4>¿Cómo funciona el proceso?</h4>
+                <ol>
+                    <li>
+                        <strong>Aprendizaje:</strong> El modelo lee tu texto de muestra y construye una tabla de probabilidades. Por cada palabra, registra qué palabras tienden a venir después y con qué frecuencia.
+                        <br>
+                        <em>Ej: Si después de "el" siempre viene "perro", P("perro" | "el") = 100%.</em>
+                    </li>
+                    <li>
+                        <strong>Generación:</strong>
+                        <ul>
+                            <li>Elige una palabra aleatoria del texto para empezar.</li>
+                            <li>Mira su tabla de probabilidades y elige la siguiente palabra (como si lanzara un dado ponderado).</li>
+                            <li>Toma esa nueva palabra y repite el proceso, generando una "cadena" palabra por palabra.</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p>
+                    El resultado es un texto que suena coherente en frases cortas, pero que a menudo pierde el sentido en párrafos largos, ya que el modelo solo tiene una "memoria" de una palabra.
+                </p>
+            </div>
+        </div>
+
     </main>
     
     <script src="{{ url_for('static', filename='js/markov.js') }}"></script>
