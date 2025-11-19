@@ -125,10 +125,10 @@ class ModeloLDA_DesdeCero:
 
         self.K = num_topicos
         self.alpha = alpha if alpha is not None else 50.0 / self.K
-        self.beta = beta if beta is not None else (1.0 / self.V)
+        self.beta = beta if beta is not None else (1.0 / self.V if self.V > 0 else 0.01)
 
         umbral_improv = (umbral if umbral is not None else 0.01) / 100
-        paciencia_lim = paciencia if paciencia is not None else 10
+        paciencia_lim = paciencia if paciencia is not None else 10 # Default
 
         # ---------- SEED CONTROL ---------- #
         if seed_base is None:
@@ -152,6 +152,12 @@ class ModeloLDA_DesdeCero:
         historial = []
         sin_mejora = 0
         last_ent = float("+inf")
+        
+        # NUEVO: Periodo de Calentamiento (Warmup)
+        # No paramos antes de la iteración 10, pase lo que pase.
+        WARMUP_ITERS = 10 
+
+        print(f"Iniciando entrenamiento (K={self.K}, MaxIter={iteraciones})...")
 
         for i in range(iteraciones):
             fast_gibbs_sampling(self.docs_array, self.words_array,
@@ -163,14 +169,20 @@ class ModeloLDA_DesdeCero:
                                              self.K, self.V, self.alpha, self.beta)
             historial.append(ent)
 
-            if ent > last_ent or (last_ent - ent) / abs(last_ent) < umbral_improv:
-                sin_mejora += 1
-            else:
-                sin_mejora = 0
-
+            # Lógica de Parada (Solo después del Warmup)
+            if i >= WARMUP_ITERS:
+                if ent > last_ent or (last_ent - ent) / abs(last_ent) < umbral_improv:
+                    sin_mejora += 1
+                    # Debug opcional para ver por qué para
+                    # print(f"Iter {i}: No mejora. Paciencia {sin_mejora}/{paciencia_lim}")
+                else:
+                    sin_mejora = 0
+                
+                if sin_mejora >= paciencia_lim:
+                    print(f"Convergió en iteración {i+1}.")
+                    break
+            
             last_ent = ent
-            if sin_mejora >= paciencia_lim:
-                break
 
         return historial
 

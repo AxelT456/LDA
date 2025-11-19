@@ -155,50 +155,64 @@ def procesar_lda_api():
 @app.route('/api/lda/optimizar', methods=['POST'])
 def optimizar_k_api():
     """
-    Barrido inteligente de K con repetición, promedio y desviación estándar.
+    Barrido dinámico de K: Continúa indefinidamente hasta que la mejora
+    de la entropía sea menor al umbral especificado.
     """
-    print("\n🔎 Buscando K ideal (Barrido Promediado)...")
+    print("\n🔎 Buscando K ideal (Barrido Dinámico)...")
 
     try:
         if 'pdf_file' not in request.files: return jsonify({"error": "Falta PDF"}), 400
         file = request.files['pdf_file']
         
-        # 1. Cargar datos de la caché (o procesar si es nuevo)
+        # 1. Cargar datos
         estrategia = request.form.get('estrategia', 'paginas')
         textos_procesados = obtener_textos_procesados(file, estrategia)
         if not textos_procesados: return jsonify({"error": "PDF vacío"}), 400
 
-        # 2. Obtener parámetros del barrido (del nuevo formulario)
+        # 2. Parámetros del barrido
         k_start = int(request.form.get('k_start', 2))
-        k_end = int(request.form.get('k_end', 50))
-        k_step = int(request.form.get('k_step', 4))
-        reps = int(request.form.get('k_reps', 3)) # Repeticiones para promediar
+        k_step_input = request.form.get('k_step')
+        
+        # Paso automático si no se define
+        if k_step_input and int(k_step_input) > 0:
+            k_step = int(k_step_input)
+        else:
+            # (Lógica de paso automático simplificada para este ejemplo)
+            k_step = 4 
 
-        # 3. Obtener parámetros de convergencia (del formulario avanzado)
+        # Umbral de parada del barrido (ej. 0.01%)
+        k_threshold_percent = float(request.form.get('k_threshold', 0.001))
+        k_stop_threshold = k_threshold_percent / 100.0
+
+        reps = int(request.form.get('k_reps', 3))
+
+        # 3. Parámetros de convergencia (del modelo LDA)
         iter_input = request.form.get('iteraciones')
-        iteraciones = int(iter_input) if iter_input else 1000 # Límite alto
-
+        iteraciones = int(iter_input) if iter_input else 1000
         umbral = float(request.form.get('umbral')) if request.form.get('umbral') else None
         paciencia = int(request.form.get('paciencia')) if request.form.get('paciencia') else None
 
-        # 4. Preparar corpus base (una sola vez)
+        # 4. Preparar corpus
         print("   Preparando corpus base...")
         lda_base = ModeloLDA_DesdeCero(textos_procesados)
         lda_base.preparar_corpus(no_below=2, no_above=0.9)
 
-        # 5. Bucle de Optimización (con repeticiones)
-        rango_k = range(k_start, k_end + 1, k_step)
+        # 5. Bucle Indefinido (While)
         resultados = []
-        print(f"   Iniciando barrido de K (K={k_start} a {k_end}, paso {k_step}, {reps} reps)...")
+        k = k_start
+        prev_entropy = float('inf') # Infinito para empezar
+        
+        print(f"   Iniciando barrido: Start K={k}, Step={k_step}, Stop Threshold={k_threshold_percent}%")
 
-        for k in rango_k:
+        # Límite de seguridad hardcodeado para evitar bucles eternos si nunca converge
+        SAFETY_LIMIT_K = 200 
+
+        while k <= SAFETY_LIMIT_K:
             entropias_rep = []
             
-            # Bucle interno para promediar (Ej. 3 veces)
+            # Repeticiones para promediar
             for r in range(reps):
-                # Usamos una semilla aleatoria diferente cada vez
                 seed_base = np.random.randint(0, 99999999)
-                
                 historial = lda_base.entrenar(
                     num_topicos=k,
                     iteraciones=iteraciones,
@@ -206,20 +220,44 @@ def optimizar_k_api():
                     beta=None,
                     umbral=umbral,
                     paciencia=paciencia,
-                    seed_base=seed_base # ¡Importante pasar la semilla!
+                    seed_base=seed_base
                 )
                 entropias_rep.append(historial[-1])
             
-            # Calcular media y desviación estándar
             mean_val = float(np.mean(entropias_rep))
             std_val = float(np.std(entropias_rep))
             
+            # Calcular mejora respecto al K anterior
+            # (La entropía debería BAJAR, así que (prev - current) debería ser positivo)
+            if prev_entropy != float('inf'):
+                mejora = (prev_entropy - mean_val) / abs(prev_entropy)
+            else:
+                mejora = 1.0 # Primera iteración siempre "mejora"
+
             resultados.append({
-                "k": k,
-                "mean": mean_val,
-                "std": std_val
+                "k": k, "mean": mean_val, "std": std_val
             })
-            print(f"   K={k} -> Entropía promedio: {mean_val:.4f} (±{std_val:.4f})")
+            
+            print(f"   K={k} -> Entropía: {mean_val:.4f}. Mejora: {mejora:.5%}")
+
+            # --- CRITERIO DE PARADA ---
+            # Si no es la primera vuelta Y la mejora es menor al umbral
+            if prev_entropy != float('inf'):
+                if mejora < k_stop_threshold:
+                    print(f"   ⏹️ Deteniendo barrido: La mejora ({mejora:.4%}) es menor al umbral ({k_threshold_percent}%).")
+                    break
+                
+                # También paramos si la entropía empieza a SUBIR (mejora negativa)
+                # Esto indica sobreajuste o inestabilidad.
+                if mejora < 0:
+                    print(f"   ⏹️ Deteniendo barrido: La entropía empezó a subir.")
+                    break
+
+            prev_entropy = mean_val
+            k += k_step
+
+        if k > SAFETY_LIMIT_K:
+            print("   ⚠️ Se alcanzó el límite de seguridad de K=200.")
 
         return jsonify(resultados)
 

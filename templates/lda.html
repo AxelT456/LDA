@@ -12,6 +12,7 @@
         <a href="/" class="btn-back">&larr; Volver al Toolkit</a>
 
         <section id="configuracion">
+            
             <div class="section-header">
                 <h3>⚙️ Configurar y Ejecutar Análisis</h3>
                 <button type="button" id="btn-open-modal" class="btn-info-icon" aria-label="Mostrar información">?</button>
@@ -27,8 +28,8 @@
                 <div class="form-group">
                     <label for="estrategia_division">Estrategia de División:</label>
                     <select id="estrategia_division" class="select-full">
-                        <option value="paginas">Por Páginas (Rápido, menos preciso)</option>
-                        <option value="capitulos" selected>Por Capítulos (Mejor calidad semántica)</option>
+                        <option value="paginas">Por Páginas (Cada pagina es un documento)</option>
+                        <option value="capitulos" selected>Por Capítulos (Cada capitulo es un documento)</option>
                         <option value="completo">Todo el PDF (Un solo documento)</option>
                     </select>
                     <small class="help-text">Define qué cuenta como un "documento" individual para el LDA.</small>
@@ -37,40 +38,60 @@
                 <p>2. Configuración del modelo:</p>
                 
                 <div class="form-group full-width-col">
+                    <label>Modo de Tópicos:</label>
+                    <div class="topic-selection-mode">
+                        <label class="radio-label">
+                            <input type="radio" name="topic_mode" value="manual" checked> Manual
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="topic_mode" value="auto"> Automático (K Ideal)
+                        </label>
+                    </div>
+                </div>
+
+                <div id="manual-k-config" class="form-group full-width-col">
                     <label for="num_topicos">Tópicos (K):</label>
                     <div class="k-ideal-container">
                         <input type="number" id="num_topicos" value="10" min="2" max="500">
+                    </div>
+                    <small class="help-text">Define el número exacto de tópicos para el análisis.</small>
+                </div>
+
+                <div id="auto-k-config" class="hidden">
+                    <div class="form-group full-width-col">
                         <button type="button" id="btn-optimizar" class="btn-secondary">
                             🔍 Calcular K Ideal
                         </button>
-                    </div>
-                    
-                    <div class="k-config-links">
                         <small class="help-text">Haz clic para graficar Entropía vs. K y encontrar el "codo".</small>
+                    </div>
+
+                    <div class="form-group full-width-col">
                         <button type="button" id="btn-avanzada-k" class="btn-text-link btn-small-link">
                             Configurar barrido de K...
                         </button>
                     </div>
-                </div>
-                
-                <div id="config-optimizacion" class="form-grid hidden config-advanced">
-                    <div class="form-group">
-                        <label for="k_start">K Mínimo:</label>
-                        <input type="number" id="k_start" value="2">
+                    
+                    <div id="config-optimizacion" class="form-grid hidden config-advanced">
+                        <div class="form-group">
+                            <label for="k_start">K Mínimo:</label>
+                            <input type="number" id="k_start" value="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="k_threshold">Parada si mejora < (%):</label>
+                            <input type="number" id="k_threshold" value="0.01" step="0.0.0001">
+                            <small class="help-text-small">Detiene el barrido si la entropía no baja este %.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="k_step">Paso (Saltos):</label>
+                            <input type="number" id="k_step" value="4">
+                        </div>
+                        <div class="form-group">
+                            <label for="k_reps">Repeticiones (Media):</label>
+                            <input type="number" id="k_reps" value="3">
+                            <small class="help-text-small">Veces que se repite por K para promediar.</small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="k_end">K Máximo:</label>
-                        <input type="number" id="k_end" value="60">
-                    </div>
-                    <div class="form-group">
-                        <label for="k_step">Paso (Saltos):</label>
-                        <input type="number" id="k_step" value="4">
-                    </div>
-                    <div class="form-group">
-                        <label for="k_reps">Repeticiones (Media):</label>
-                        <input type="number" id="k_reps" value="3">
-                        <small class="help-text-small">Veces que se repite por K para promediar.</small>
-                    </div>
+                    
                 </div>
 
                 <div id="contenedor-optimizacion" class="hidden optimization-container">
@@ -147,7 +168,7 @@
                 </div>
             </div> 
         </section>
-        <!--MODAL-->
+
         <div id="modal-info" class="modal-overlay hidden">
             <div class="modal-content">
                 <button id="btn-close-modal" class="modal-close">&times;</button>

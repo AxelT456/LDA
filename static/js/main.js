@@ -38,6 +38,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCloseModal = document.getElementById('btn-close-modal');
     const modalOverlay = document.getElementById('modal-info');
 
+    // --- NUEVOS SELECTORES para Modos de Tópicos ---
+    const radioTopicModeManual = document.querySelector('input[name="topic_mode"][value="manual"]');
+    const radioTopicModeAuto = document.querySelector('input[name="topic_mode"][value="auto"]');
+    const manualKConfigDiv = document.getElementById('manual-k-config');
+    const autoKConfigDiv = document.getElementById('auto-k-config');
+
+    // --- NUEVO: Función para alternar la visibilidad de los modos de tópico ---
+    function toggleTopicMode() {
+        if (radioTopicModeManual.checked) {
+            manualKConfigDiv.classList.remove('hidden');
+            autoKConfigDiv.classList.add('hidden');
+            //contenedorOptimizacion.classList.add('hidden'); // Ocultar gráfica si se cambia a manual
+        } else { // auto-k está checked
+            manualKConfigDiv.classList.add('hidden');
+            autoKConfigDiv.classList.remove('hidden');
+        }
+    }
+
+    // --- NUEVO: Event Listeners para los botones de radio ---
+    radioTopicModeManual.addEventListener('change', toggleTopicMode);
+    radioTopicModeAuto.addEventListener('change', toggleTopicMode);
+
+    // Ejecutar al cargar para establecer el estado inicial
+    toggleTopicMode();
+
     if (btnOpenModal) {
         // --- EVENTO: Abrir y Cerrar Modal de Info ---
         btnOpenModal.addEventListener('click', () => {
@@ -76,34 +101,49 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const ks = parseInt(document.getElementById('k_start').value);
-        const ke = parseInt(document.getElementById('k_end').value);
+        const threshold = parseFloat(document.getElementById('k_threshold').value);
         const st = parseInt(document.getElementById('k_step').value);
         const rep = parseInt(document.getElementById('k_reps').value);
 
-        if (ks < 1 || ke <= ks || st < 1 || rep < 1) {
-            alert("⚠️ Parámetros inválidos para barrido de K");
-            btnOptimizar.disabled = false;
-            btnOptimizar.textContent = "🔍 Calcular K Ideal";
+        // VALIDACIÓN CORRECTA
+        if (isNaN(ks) || ks < 1) {
+            alert("⚠️ El valor de K inicial debe ser un número mayor o igual a 1.");
             return;
         }
 
+        if (isNaN(threshold) || threshold < 0 || threshold > 100) {
+            alert("⚠️ El umbral debe estar entre 0% y 100%.");
+            return;
+        }
+
+        if (isNaN(st) || st < 1) {
+            alert("⚠️ El paso debe ser un número mayor o igual a 1.");
+            return;
+        }
+
+        if (isNaN(rep) || rep < 1) {
+            alert("⚠️ Las repeticiones deben ser un número mayor o igual a 1.");
+            return;
+        }
 
         const textoOriginal = btnOptimizar.textContent;
         btnOptimizar.disabled = true;
-        btnOptimizar.textContent = "⏳ Calculando...";
-        
+        btnOptimizar.textContent = "⏳ Calculando K óptimo...";
+
         const formData = new FormData();
         formData.append('pdf_file', fileInput.files[0]);
         formData.append('estrategia', document.getElementById('estrategia_division').value);
 
+        // Config avanzadas
         if (inputIteraciones.value) formData.append('iteraciones', inputIteraciones.value);
         if (inputUmbral.value) formData.append('umbral', inputUmbral.value);
         if (inputPaciencia.value) formData.append('paciencia', inputPaciencia.value);
 
-        formData.append('k_start', document.getElementById('k_start').value);
-        formData.append('k_end', document.getElementById('k_end').value);
-        formData.append('k_step', document.getElementById('k_step').value);
-        formData.append('k_reps', document.getElementById('k_reps').value);
+        // Config de optimización corregida
+        formData.append('k_start', ks);
+        formData.append('k_threshold', threshold);
+        formData.append('k_step', st);
+        formData.append('k_reps', rep);
 
         fetch('/api/lda/optimizar', {
             method: 'POST',
@@ -112,12 +152,46 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if (data.error) {
-                alert("❌ Error: " + data.error);
-                console.error("Error recibido:", data.error);
+                alert("Error: " + data.error);
                 return;
             }
             contenedorOptimizacion.classList.remove('hidden');
+            // 1. Dibujar la gráfica
             renderizarGraficaOptimizacion(data);
+
+            // 2. Encontrar el mejor K
+            let mejorK = data[0].k;
+            let menorEntropia = data[0].mean;
+            data.forEach(punto => {
+                if (punto.mean < menorEntropia) {
+                    menorEntropia = punto.mean;
+                    mejorK = punto.k;
+                }
+            });
+
+            console.log(`🤖 Mejor K: ${mejorK}`);
+
+            // 3. Poner el valor en el input
+            inputTopicos.value = mejorK;
+            // Disparamos el evento 'input' para que se actualicen otras cosas si es necesario
+            inputTopicos.dispatchEvent(new Event('input'));
+
+            // 4. EJECUTAR AUTOMÁTICAMENTE
+            setTimeout(() => {
+                const notificacion = document.createElement('div');
+                notificacion.textContent = `🚀 K óptimo (${mejorK}) detectado. Ejecutando...`;
+                notificacion.style.color = "#28a745";
+                notificacion.style.fontWeight = "bold";
+                notificacion.style.marginTop = "10px";
+                contenedorOptimizacion.appendChild(notificacion);
+
+                // Ya no necesitamos cambiar el radio button a manual,
+                // porque en el Paso 2 hicimos que el formulario funcione igual.
+                
+                boton.click(); // Simula el click en "Ejecutar Análisis"
+                
+                setTimeout(() => notificacion.remove(), 5000);
+            }, 500);
         })
         .catch(err => {
             console.error(err);
@@ -125,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .finally(() => {
             btnOptimizar.disabled = false;
-            btnOptimizar.textContent = "🔍 Calcular K Ideal";
+            btnOptimizar.textContent = textoOriginal;
         });
     });
 
@@ -228,98 +302,133 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA PRINCIPAL (SUBMIT) ---
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+
         if (!fileInput.files || fileInput.files.length === 0) {
-            estadoDiv.innerHTML = '<p class="error">Por favor, selecciona un archivo PDF primero.</p>';
-            seccionResultados.classList.remove('hidden');
+            alert("⚠️ Por favor, selecciona un archivo PDF primero.");
             return;
         }
-        boton.disabled = true;
-        boton.textContent = 'Procesando...';
-        seccionResultados.classList.remove('hidden');
-        estadoDiv.innerHTML = '<p class="loading">Iniciando análisis. Esto puede tardar...</p>';
-        contenedor.innerHTML = '';
-        controlesResultados.classList.add('hidden'); 
-        detailsEntropia.classList.add('hidden');
-        detailsEntropia.open = false; 
-        
-        // ¡ARREGLO! Ahora esta variable existe y puede ser accedida.
-        if (graficaEntropiaInstance) {
-            graficaEntropiaInstance.destroy();
-            graficaEntropiaInstance = null;
-        }
-        const formDataManual = new FormData();
-        formDataManual.append('pdf_file', fileInput.files[0]);
-        formDataManual.append('k', inputTopicos.value);
-        if (selectEstrategia) {
-            formDataManual.append('estrategia', selectEstrategia.value);
-        }
-        if (inputIteraciones.value) formDataManual.append('iteraciones', inputIteraciones.value);
-        if (inputAlpha.value) formDataManual.append('alpha', inputAlpha.value);
-        if (inputBeta.value) formDataManual.append('beta', inputBeta.value);
-        if (inputUmbral.value) formDataManual.append('umbral', inputUmbral.value);
-        if (inputPaciencia.value) formDataManual.append('paciencia', inputPaciencia.value);
-        
-        fetch('/api/procesar', {
-            method: 'POST',
-            body: formDataManual
-        })
-        .then(response => response.json())
-        .then(data => { 
-            estadoDiv.innerHTML = `<p class="success">Análisis completado.</p>`;
-            if (data.error) {
-                estadoDiv.innerHTML = `<p class="error">Error en Python: ${data.error}</p>`;
-                datosCompletosTopicos = [];
+
+        // --- VALIDACIÓN DE MODO AUTOMÁTICO ---
+        if (radioTopicModeAuto.checked) {
+            const kActual = parseInt(inputTopicos.value);
+
+            if (isNaN(kActual) || kActual < 2) {
+                alert("⚠️ Primero debes calcular el K ideal usando el botón 'Calcular K Ideal'.");
                 return;
             }
-            datosCompletosTopicos = data.topicos; 
-            const historialEntropia = data.entropia_data;
-            inputPalabrasVisibles.value = "10"; 
-            controlesResultados.classList.remove('hidden'); 
-            renderizarTopicos(); 
-            if (historialEntropia && historialEntropia.length > 0) {
-                renderizarGraficaEntropia(historialEntropia);
-                detailsEntropia.classList.remove('hidden'); 
-                detailsEntropia.open = true; 
-            }
+        }
+
+        // --- Preparar FormData ---
+        const formData = new FormData();
+        formData.append('pdf_file', fileInput.files[0]);
+        formData.append('estrategia', selectEstrategia.value);
+
+        // ANTES: Solo enviaba si estaba en manual
+        // if (radioTopicModeManual.checked) {
+        //    formData.append('num_topicos', inputTopicos.value);
+        // }
+        formData.append('num_topicos', inputTopicos.value); 
+        formData.append('k', inputTopicos.value);
+
+        // Configuración avanzada (solo si están seteadas)
+        if (inputIteraciones.value) formData.append('iteraciones', inputIteraciones.value);
+        if (inputUmbral.value)       formData.append('umbral', inputUmbral.value);
+        if (inputPaciencia.value)    formData.append('paciencia', inputPaciencia.value);
+        if (inputAlpha.value)        formData.append('alpha', inputAlpha.value);
+        if (inputBeta.value)         formData.append('beta', inputBeta.value);
+
+        // --- Enviar solicitud ---
+        boton.disabled = true;
+        boton.textContent = "⏳ Procesando...";
+
+        fetch('/api/procesar', { // Asegúrate de que esta URL sea la correcta (/api/procesar)
+            method: 'POST',
+            body: formData
         })
-        .catch(error => {
-            console.error('Error al procesar LDA:', error);
-            estadoDiv.innerHTML = `<p class="error"><strong>Error al procesar la solicitud.</strong><br>${error.message}.</p>`;
-            datosCompletosTopicos = [];
-            controlesResultados.classList.add('hidden'); 
-        })
-        .finally(() => {
+        .then(res => res.json())
+        .then(data => {
             boton.disabled = false;
-            boton.textContent = 'Ejecutar Análisis';
+            boton.textContent = "Ejecutar Análisis";
+
+            if (data.error) {
+                alert("❌ Error: " + data.error);
+                return;
+            }
+
+            seccionResultados.classList.remove('hidden');
+            controlesResultados.classList.remove('hidden');
+
+            // --- 🛠️ BLOQUE CORREGIDO 🛠️ ---
+
+            // 1. Guardar los datos en la variable global que usa tu función de renderizado
+            datosCompletosTopicos = data.topicos;
+
+            // 2. Llamar a la función con el nombre CORRECTO (renderizarTopicos)
+            renderizarTopicos();
+
+            // 3. Llamar a la gráfica de entropía con el nombre y dato CORRECTOS
+            // (Tu backend manda 'entropia_data', no 'entropia')
+            if (data.entropia_data) {
+                detailsEntropia.classList.remove('hidden'); 
+                detailsEntropia.open = true;
+                renderizarGraficaEntropia(data.entropia_data);
+            }
+            
+            // --- FIN BLOQUE CORREGIDO ---
+        })
+        .catch(err => {
+            console.error(err);
+            alert("❌ Error inesperado al ejecutar el análisis.");
+            boton.disabled = false;
+            boton.textContent = "Ejecutar Análisis";
         });
     });
 
     // --- FUNCIONES DE RENDERIZADO (Gráficas y Listas) ---
+
+    // 1. Actualizar vista cuando cambias el número en el input
+    inputPalabrasVisibles.addEventListener('input', () => {
+        renderizarTopicos();
+    });
+
+    // 2. Descargar JSON cuando das click en Guardar
+    btnGuardar.addEventListener('click', () => {
+        if (!datosCompletosTopicos || datosCompletosTopicos.length === 0) {
+            alert("⚠️ No hay datos procesados para guardar.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosCompletosTopicos, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "resultados_lda.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    });
     
     function renderizarGraficaEntropia(datosEntropia) {
-        // La variable 'graficaEntropiaInstance' ya está declarada arriba
         const ctx = canvasEntropia.getContext("2d");
         let labels = [];
         let dataPoints = [];
+        
+        // Muestreo para no saturar la gráfica si son muchas iteraciones
         if (datosEntropia.length > 500) {
             const paso = Math.ceil(datosEntropia.length / 500);
             datosEntropia.forEach((valor, index) => {
                 if (index % paso === 0) {
-                    labels.push(`Iteración ${index + 1}`);
+                    labels.push(`It. ${index + 1}`);
                     dataPoints.push(valor);
                 }
             });
-            if ((datosEntropia.length - 1) % paso !== 0) {
-                labels.push(`Iteración ${datosEntropia.length}`);
-                dataPoints.push(datosEntropia[datosEntropia.length - 1]);
-            }
         } else {
-            labels = datosEntropia.map((_, i) => `Iteración ${i + 1}`);
+            labels = datosEntropia.map((_, i) => `It. ${i + 1}`);
             dataPoints = datosEntropia;
         }
+
         if (graficaEntropiaInstance) {
             graficaEntropiaInstance.destroy();
         }
+
         graficaEntropiaInstance = new Chart(ctx, {
             type: 'line',
             data: {
@@ -327,46 +436,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Log(Entropía)',
                     data: dataPoints,
-                    borderColor: 'rgba(0, 86, 179, 0.8)',
-                    backgroundColor: 'rgba(0, 86, 179, 0.2)',
-                    tension: 0.2,
+                    borderColor: '#28a745', // Verde para diferenciar
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.3,
                     fill: true,
-                    pointRadius: 2
+                    pointRadius: 0, // Sin puntos para que sea más limpia
+                    pointHoverRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false, 
+                interaction: { mode: 'index', intersect: false },
                 scales: {
-                    x: {
-                        title: { display: true, text: 'Pasadas de Gibbs' },
-                        ticks: { maxTicksLimit: 10, maxRotation: 0 }
-                    },
-                    y: {
-                        title: { display: true, text: 'Log(Entropía)' },
-                        beginAtZero: false
-                    }
+                    x: { display: true, title: { display: true, text: 'Iteraciones' } },
+                    y: { display: true, title: { display: true, text: 'Entropía' } }
                 },
                 plugins: { legend: { display: false } }
             }
         });
     }
+    function obtenerNumPalabrasSeguro() {
+        // Si el input está vacío o es inválido, usamos 10 por defecto
+        let val = parseInt(inputPalabrasVisibles.value, 10);
+        if (isNaN(val) || val < 1) {
+            val = 10;
+            // Opcional: Rellenar el input visualmente para que el usuario sepa
+            inputPalabrasVisibles.value = 10; 
+        }
+        return val;
+    }
     function dibujarVistaLista(container, topico, numPalabras) {
         container.innerHTML = "";
         const lista = document.createElement('ul');
         lista.className = 'lista-palabras-topico';
-        lista.style.listStyleType = 'none';
-        lista.style.paddingLeft = '0';
+        
         const palabrasAMostrar = topico.palabras.slice(0, numPalabras);
+        
         palabrasAMostrar.forEach(item => {
             const li = document.createElement('li');
-            li.style.display = 'flex';
-            li.style.justifyContent = 'space-between';
-            li.style.marginBottom = '0.5rem';
-            li.style.fontSize = '0.95rem';
+            // Estilos inline para asegurar que se vea bien
             li.innerHTML = `
-                <span style="font-weight: 600;">"${item.palabra}"</span> 
-                <span style="color: #555;">(${(item.prob * 100).toFixed(2)}%)</span>
+                <span style="font-weight: 600; color:#333;">"${item.palabra}"</span> 
+                <span style="color: #666; font-family:monospace;">${(item.prob * 100).toFixed(2)}%</span>
             `;
             lista.appendChild(li);
         });
@@ -374,13 +486,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function dibujarVistaGrafica(container, topico, numPalabras) {
         container.innerHTML = "";
-        const palabrasAMostrar = topico.palabras.slice(0, numPalabras).reverse();
+        // Invertimos para que la barra más larga salga arriba en el gráfico horizontal
+        const palabrasAMostrar = topico.palabras.slice(0, numPalabras); 
         const labels = palabrasAMostrar.map(item => item.palabra);
         const dataPoints = palabrasAMostrar.map(item => item.prob * 100);
+
         const canvas = document.createElement('canvas');
+        canvas.style.height = "100%";
         container.appendChild(canvas);
-        const colorBarra = 'rgba(0, 86, 179, 0.7)';
-        const colorBorde = 'rgba(0, 86, 179, 1)';
+
         container.chartInstance = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
@@ -388,64 +502,86 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Probabilidad (%)',
                     data: dataPoints,
-                    backgroundColor: colorBarra,
-                    borderColor: colorBorde,
-                    borderWidth: 1
+                    backgroundColor: 'rgba(0, 86, 179, 0.7)',
+                    borderColor: 'rgba(0, 86, 179, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
                 }]
             },
             options: {
-                indexAxis: 'y',
+                indexAxis: 'y', // Gráfica Horizontal
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true, ticks: { callback: (v) => v + '%' } } }
+                scales: { 
+                    x: { beginAtZero: true, grid: { display: false } },
+                    y: { grid: { display: false } }
+                }
             }
         });
     }
     function toggleVista(button, container, topico) {
-        const numPalabras = parseInt(inputPalabrasVisibles.value, 10);
+        const numPalabras = obtenerNumPalabrasSeguro();
         const currentView = button.dataset.currentView;
+
+        // Destruir gráfica anterior si existe para liberar memoria
         if (container.chartInstance) {
             container.chartInstance.destroy();
             container.chartInstance = null;
         }
+
         if (currentView === 'list') {
             dibujarVistaGrafica(container, topico, numPalabras);
-            button.textContent = 'Ver Lista';
+            button.textContent = '📜 Ver Lista';
             button.dataset.currentView = 'graph';
         } else {
             dibujarVistaLista(container, topico, numPalabras);
-            button.textContent = 'Graficar';
+            button.textContent = '📊 Graficar';
             button.dataset.currentView = 'list';
         }
     }
     function renderizarTopicos() {
         contenedor.innerHTML = '';
-        const numPalabras = parseInt(inputPalabrasVisibles.value, 10);
-        if (isNaN(numPalabras) || numPalabras <= 0) return;
+        // Usamos la función segura para evitar que falle si borras el input
+        const numPalabras = obtenerNumPalabrasSeguro();
+
+        if (!datosCompletosTopicos || datosCompletosTopicos.length === 0) return;
+
         datosCompletosTopicos.forEach(topico => {
             const topicoDiv = document.createElement('div');
             topicoDiv.className = 'topico';
+
             const topicoHeader = document.createElement('div');
             topicoHeader.className = 'topico-header';
+
             const titulo = document.createElement('h4');
             titulo.className = 'topico-titulo';
             titulo.textContent = topico.nombre_personalizado || `Tópico ${topico.topico_id}`;
             titulo.setAttribute('contenteditable', 'true');
             titulo.setAttribute('spellcheck', 'false');
+
             const btnToggle = document.createElement('button');
             btnToggle.className = 'btn-toggle-view';
-            btnToggle.textContent = 'Graficar';
+            btnToggle.textContent = '📊 Graficar';
             btnToggle.dataset.currentView = 'list';
+
             topicoHeader.appendChild(titulo);
             topicoHeader.appendChild(btnToggle);
+
             const contentContainer = document.createElement('div');
             contentContainer.className = 'topico-contenido';
+            // Forzamos altura mínima para que la gráfica no se aplaste
+            contentContainer.style.minHeight = "300px"; 
             contentContainer.chartInstance = null; 
+
+            // Dibujamos lista por defecto
             dibujarVistaLista(contentContainer, topico, numPalabras);
+
+            // Evento del botón "Graficar" individual
             btnToggle.addEventListener('click', () => {
                 toggleVista(btnToggle, contentContainer, topico);
             });
+
             topicoDiv.appendChild(topicoHeader);
             topicoDiv.appendChild(contentContainer);
             contenedor.appendChild(topicoDiv);
